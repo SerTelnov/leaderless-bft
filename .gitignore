@@ -1,0 +1,6 @@
+#Build
+.gradle
+.idea
+build
+out
+
