@@ -1,7 +1,7 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.Committee;
-import static com.telnov.consensus.dbft.types.Committee.committee;
+import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class EstimationReceiverTest {
 
-    private final Committee committee = committee(4);
+    private final Committee committee = aRandomCommittee(4);
     private final EstimationReceiver estimationReceiver = new EstimationReceiver(committee);
 
     @Test

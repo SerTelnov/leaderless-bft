@@ -2,7 +2,7 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessage.Builder.auxiliaryMessage;
-import com.telnov.consensus.dbft.types.CommitMessage;
+import com.telnov.consensus.dbft.types.BinaryCommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.CoordinatorMessage;
 import static com.telnov.consensus.dbft.types.CoordinatorMessage.Builder.coordinatorMessage;
@@ -32,7 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 @NotThreadSafe
-public class BinaryConsensus implements Receiver {
+public class BinaryConsensus implements MessageHandler {
 
     private final Duration timerAugender;
 
@@ -97,7 +97,7 @@ public class BinaryConsensus implements Receiver {
         }
 
         final var decision = consensusDecision.get(0);
-        sender.broadcast(new CommitMessage(name, decision.estimation));
+        sender.broadcast(new BinaryCommitMessage(name, decision.estimation));
     }
 
     private boolean onTerminationState(Round round) {
@@ -187,15 +187,15 @@ public class BinaryConsensus implements Receiver {
     }
 
     @Override
-    public void receive(Message message) {
+    public void handle(Message message) {
         switch (message.type()) {
-            case EST -> receiveEst((EstimationMessage) message);
-            case AUX -> receiveAux((AuxiliaryMessage) message);
-            case COORD -> receiveCoord((CoordinatorMessage) message);
+            case EST -> handleEst((EstimationMessage) message);
+            case AUX -> handleAux((AuxiliaryMessage) message);
+            case COORD -> handleCoord((CoordinatorMessage) message);
         }
     }
 
-    private void receiveEst(EstimationMessage est) {
+    private void handleEst(EstimationMessage est) {
         estimationReceiver.receive(est)
             .ifPresent(estimation -> {
                 receivedEstimations.putIfAbsent(est.round, new CopyOnWriteArrayList<>());
@@ -203,12 +203,12 @@ public class BinaryConsensus implements Receiver {
             });
     }
 
-    private void receiveAux(AuxiliaryMessage aux) {
+    private void handleAux(AuxiliaryMessage aux) {
         receivedAux.putIfAbsent(aux.round, new ConcurrentHashMap<>());
         receivedAux.get(aux.round).put(aux.author, aux.estimations);
     }
 
-    private void receiveCoord(CoordinatorMessage coord) {
+    private void handleCoord(CoordinatorMessage coord) {
         if (coordinatorFinder.isCoordinator(coord.author(), coord.round)) {
             coordinatorImposes.putIfAbsent(coord.round, coord.imposeEstimation);
         }

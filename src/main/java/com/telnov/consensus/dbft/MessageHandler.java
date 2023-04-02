@@ -2,7 +2,7 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.Message;
 
-public interface Receiver {
+public interface MessageHandler {
 
-    void receive(Message message);
+    void handle(Message message);
 }

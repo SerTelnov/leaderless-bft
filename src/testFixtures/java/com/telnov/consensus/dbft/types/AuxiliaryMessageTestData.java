@@ -6,7 +6,6 @@ import static com.telnov.consensus.dbft.types.Round.round;
 import static java.util.Arrays.stream;
 import static java.util.UUID.randomUUID;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 

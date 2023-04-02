@@ -2,9 +2,9 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessageTestData.anAuxiliaryMessage;
-import com.telnov.consensus.dbft.types.CommitMessage;
+import com.telnov.consensus.dbft.types.BinaryCommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
-import static com.telnov.consensus.dbft.types.Committee.committee;
+import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee;
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
@@ -33,7 +33,8 @@ class BinaryConsensusTest {
     private final CoordinatorFinder coordinatorFinder = mock(CoordinatorFinder.class);
 
     private final PublicKey name = new PublicKey(randomUUID());
-    private final Committee committee = committee(4);
+    private final Committee committee = aRandomCommittee(4);
+
     private final BinaryConsensus consensus = new BinaryConsensus(
         TEST_TIMER_AUGENDER,
         name,
@@ -51,9 +52,9 @@ class BinaryConsensusTest {
         var future = asyncConsensusRunnableService.submit(() -> consensus.propose(est));
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -66,9 +67,9 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
 
         // that
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -82,7 +83,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     @Test
@@ -96,13 +97,13 @@ class BinaryConsensusTest {
         var future = asyncConsensusRunnableService.submit(() -> consensus.propose(est));
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
-        consensus.receive(anEstimationMessage(round1, otherEst).build());
-        consensus.receive(anEstimationMessage(round1, otherEst).build());
-        consensus.receive(anEstimationMessage(round1, otherEst).build());
+        consensus.handle(anEstimationMessage(round1, otherEst).build());
+        consensus.handle(anEstimationMessage(round1, otherEst).build());
+        consensus.handle(anEstimationMessage(round1, otherEst).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -118,16 +119,16 @@ class BinaryConsensusTest {
         var coordinator = new PublicKey(randomUUID());
         given(coordinatorFinder.isCoordinator(coordinator, round1))
             .willReturn(true);
-        consensus.receive(aCoordinatorMessage()
+        consensus.handle(aCoordinatorMessage()
             .author(coordinator)
             .round(round1)
             .imposeEstimation(est)
             .build());
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
 
         // that
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -142,12 +143,12 @@ class BinaryConsensusTest {
         var round2 = round(2);
 
         // send EST
-        consensus.receive(anEstimationMessage(round2, est).build());
-        consensus.receive(anEstimationMessage(round2, est).build());
-        consensus.receive(anEstimationMessage(round2, est).build());
+        consensus.handle(anEstimationMessage(round2, est).build());
+        consensus.handle(anEstimationMessage(round2, est).build());
+        consensus.handle(anEstimationMessage(round2, est).build());
 
         // then
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anEstimationMessage()
                 .author(name)
                 .round(round2)
@@ -157,19 +158,19 @@ class BinaryConsensusTest {
         // when coord
         given(coordinatorFinder.isCoordinator(coordinator, round2))
             .willReturn(true);
-        consensus.receive(aCoordinatorMessage()
+        consensus.handle(aCoordinatorMessage()
             .author(coordinator)
             .round(round2)
             .imposeEstimation(est)
             .build());
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round2, est).build());
-        consensus.receive(anAuxiliaryMessage(round2, est).build());
-        consensus.receive(anAuxiliaryMessage(round2, est).build());
+        consensus.handle(anAuxiliaryMessage(round2, est).build());
+        consensus.handle(anAuxiliaryMessage(round2, est).build());
+        consensus.handle(anAuxiliaryMessage(round2, est).build());
 
         // that
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anAuxiliaryMessage()
                 .author(name)
                 .round(round2)
@@ -181,12 +182,12 @@ class BinaryConsensusTest {
         var round3 = round(3);
 
         // send EST
-        consensus.receive(anEstimationMessage(round3, est).build());
-        consensus.receive(anEstimationMessage(round3, est).build());
-        consensus.receive(anEstimationMessage(round3, est).build());
+        consensus.handle(anEstimationMessage(round3, est).build());
+        consensus.handle(anEstimationMessage(round3, est).build());
+        consensus.handle(anEstimationMessage(round3, est).build());
 
         // then
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anEstimationMessage()
                 .author(name)
                 .round(round3)
@@ -196,19 +197,19 @@ class BinaryConsensusTest {
         // when coord
         given(coordinatorFinder.isCoordinator(coordinator, round3))
             .willReturn(true);
-        consensus.receive(aCoordinatorMessage()
+        consensus.handle(aCoordinatorMessage()
             .author(coordinator)
             .round(round3)
             .imposeEstimation(est)
             .build());
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round3, est).build());
-        consensus.receive(anAuxiliaryMessage(round3, est).build());
-        consensus.receive(anAuxiliaryMessage(round3, est).build());
+        consensus.handle(anAuxiliaryMessage(round3, est).build());
+        consensus.handle(anAuxiliaryMessage(round3, est).build());
+        consensus.handle(anAuxiliaryMessage(round3, est).build());
 
         // that
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anAuxiliaryMessage()
                 .author(name)
                 .round(round3)
@@ -219,7 +220,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     @Test
@@ -233,9 +234,9 @@ class BinaryConsensusTest {
         var future = asyncConsensusRunnableService.submit(() -> consensus.propose(est));
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -248,9 +249,9 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est, otherEst).build());
-        consensus.receive(anAuxiliaryMessage(round1, est, otherEst).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est, otherEst).build());
+        consensus.handle(anAuxiliaryMessage(round1, est, otherEst).build());
 
         // that
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -264,7 +265,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     @Test
@@ -279,9 +280,9 @@ class BinaryConsensusTest {
         var round1 = round(1);
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -295,9 +296,9 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
 
         // then
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -312,9 +313,9 @@ class BinaryConsensusTest {
         var round2 = round(2);
 
         // send EST
-        consensus.receive(anEstimationMessage(round2, est).build());
-        consensus.receive(anEstimationMessage(round2, est).build());
-        consensus.receive(anEstimationMessage(round2, est).build());
+        consensus.handle(anEstimationMessage(round2, est).build());
+        consensus.handle(anEstimationMessage(round2, est).build());
+        consensus.handle(anEstimationMessage(round2, est).build());
 
         // then
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -325,12 +326,12 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round2, est).build());
-        consensus.receive(anAuxiliaryMessage(round2, est).build());
-        consensus.receive(anAuxiliaryMessage(round2, est).build());
+        consensus.handle(anAuxiliaryMessage(round2, est).build());
+        consensus.handle(anAuxiliaryMessage(round2, est).build());
+        consensus.handle(anAuxiliaryMessage(round2, est).build());
 
         // then
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anAuxiliaryMessage()
                 .author(name)
                 .round(round2)
@@ -342,9 +343,9 @@ class BinaryConsensusTest {
         var round3 = round(3);
 
         // send EST
-        consensus.receive(anEstimationMessage(round3, est).build());
-        consensus.receive(anEstimationMessage(round3, est).build());
-        consensus.receive(anEstimationMessage(round3, est).build());
+        consensus.handle(anEstimationMessage(round3, est).build());
+        consensus.handle(anEstimationMessage(round3, est).build());
+        consensus.handle(anEstimationMessage(round3, est).build());
 
         // then
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -355,12 +356,12 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round3, est).build());
-        consensus.receive(anAuxiliaryMessage(round3, est).build());
-        consensus.receive(anAuxiliaryMessage(round3, est).build());
+        consensus.handle(anAuxiliaryMessage(round3, est).build());
+        consensus.handle(anAuxiliaryMessage(round3, est).build());
+        consensus.handle(anAuxiliaryMessage(round3, est).build());
 
         // then
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anAuxiliaryMessage()
                 .author(name)
                 .round(round3)
@@ -372,9 +373,9 @@ class BinaryConsensusTest {
         var round4 = round(4);
 
         // send EST
-        consensus.receive(anEstimationMessage(round4, est).build());
-        consensus.receive(anEstimationMessage(round4, est).build());
-        consensus.receive(anEstimationMessage(round4, est).build());
+        consensus.handle(anEstimationMessage(round4, est).build());
+        consensus.handle(anEstimationMessage(round4, est).build());
+        consensus.handle(anEstimationMessage(round4, est).build());
 
         // then
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -385,12 +386,12 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
-        consensus.receive(anAuxiliaryMessage(round4, est).build());
-        consensus.receive(anAuxiliaryMessage(round4, est).build());
-        consensus.receive(anAuxiliaryMessage(round4, est).build());
+        consensus.handle(anAuxiliaryMessage(round4, est).build());
+        consensus.handle(anAuxiliaryMessage(round4, est).build());
+        consensus.handle(anAuxiliaryMessage(round4, est).build());
 
         // then
-        assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
+        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(sender).should(inOrder)
             .broadcast(anAuxiliaryMessage()
                 .author(name)
                 .round(round4)
@@ -401,7 +402,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     @Test
@@ -416,9 +417,9 @@ class BinaryConsensusTest {
         var future = asyncConsensusRunnableService.submit(() -> consensus.propose(est));
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -439,16 +440,16 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send coordinator AUX
-        consensus.receive(aCoordinatorMessage()
+        consensus.handle(aCoordinatorMessage()
             .author(name)
             .round(round1)
             .imposeEstimation(est)
             .build());
 
         // and other send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
 
         // then
         assertWithRetry(() -> then(sender).should(inOrder)
@@ -462,7 +463,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     @Test
@@ -476,9 +477,9 @@ class BinaryConsensusTest {
         var future = asyncConsensusRunnableService.submit(() -> consensus.propose(est));
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -491,7 +492,7 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send coordinator AUX
-        consensus.receive(aCoordinatorMessage()
+        consensus.handle(aCoordinatorMessage()
             .author(name)
             .round(round1)
             .imposeEstimation(otherEst)
@@ -506,15 +507,15 @@ class BinaryConsensusTest {
                 .build()));
 
         // and other send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
 
         // and Consensus
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     @Test
@@ -528,9 +529,9 @@ class BinaryConsensusTest {
         var future = asyncConsensusRunnableService.submit(() -> consensus.propose(est));
 
         // send EST
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
-        consensus.receive(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(sender);
@@ -543,7 +544,7 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send fake coordinator AUX
-        consensus.receive(aCoordinatorMessage()
+        consensus.handle(aCoordinatorMessage()
             .round(round1)
             .imposeEstimation(fakeCoordEst)
             .build());
@@ -558,34 +559,18 @@ class BinaryConsensusTest {
             })));
 
         // and other send AUX
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
-        consensus.receive(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
 
         // and Consensus
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, est)));
+            .broadcast(new BinaryCommitMessage(name, est)));
     }
 
     private static void assertWithRetry(Runnable runnable) {
-        assertWithRetry(TEST_TIMER_AUGENDER.multipliedBy(2), runnable);
-    }
-
-    private static void assertWithRetry(Duration retryTimeout, Runnable runnable) {
-        final var timout = retryTimeout.toMillis();
-        final var startAssertAt = System.currentTimeMillis();
-
-        while (true) {
-            try {
-                runnable.run();
-                return;
-            } catch (AssertionError er) {
-                if (System.currentTimeMillis() - startAssertAt >= timout) {
-                    throw er;
-                }
-            }
-        }
+        AssertionsWithRetry.assertWithRetry(TEST_TIMER_AUGENDER.multipliedBy(2), runnable);
     }
 }
