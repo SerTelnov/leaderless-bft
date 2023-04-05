@@ -6,8 +6,8 @@ import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.Estimation;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import com.telnov.consensus.dbft.types.Message;
-import com.telnov.consensus.dbft.types.ProposedValue;
-import com.telnov.consensus.dbft.types.ProposedValueMessage;
+import com.telnov.consensus.dbft.types.ProposalBlock;
+import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.util.function.Predicate.not;
 
@@ -23,7 +23,7 @@ public class Consensus implements MessageHandler {
     private final Sender sender;
     private final Client client;
 
-    private final Map<PublicKey, ProposedValue> proposals = new ConcurrentHashMap<>();
+    private final Map<PublicKey, ProposalBlock> proposals = new ConcurrentHashMap<>();
     private final Map<PublicKey, Estimation> binProposals = new ConcurrentHashMap<>();
     private final List<PublicKey> binProposalsReceivedOrder = new CopyOnWriteArrayList<>();
 
@@ -37,8 +37,8 @@ public class Consensus implements MessageHandler {
         this.client = client;
     }
 
-    public void propose(ProposedValue proposedValue) {
-        sender.broadcast(new ProposedValueMessage(name, proposedValue));
+    public void propose(ProposalBlock newBlock) {
+        sender.broadcast(new ProposedMultiValueMessage(name, newBlock));
 
         do {
             proposals.keySet()
@@ -74,7 +74,7 @@ public class Consensus implements MessageHandler {
     public void handle(Message message) {
         switch (message.type()) {
             case BINARY_COMMIT -> handleBinaryMessage((BinaryCommitMessage) message);
-            case PROPOSE_VALUE -> handleProposedValueMessage((ProposedValueMessage) message);
+            case PROPOSE_VALUE -> handleProposedValueMessage((ProposedMultiValueMessage) message);
         }
     }
 
@@ -86,7 +86,7 @@ public class Consensus implements MessageHandler {
         }
     }
 
-    private void handleProposedValueMessage(ProposedValueMessage message) {
-        proposals.putIfAbsent(message.author(), message.proposedValue());
+    private void handleProposedValueMessage(ProposedMultiValueMessage message) {
+        proposals.putIfAbsent(message.author(), message.block());
     }
 }
