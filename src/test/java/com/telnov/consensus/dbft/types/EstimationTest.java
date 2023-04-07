@@ -16,7 +16,7 @@ class EstimationTest {
         var result = estimation(value);
 
         // then
-        assertThat(result.value).isEqualTo(value);
+        assertThat(result.value()).isEqualTo(value);
         assertThat(result).isEqualTo(estimation(value));
     }
 

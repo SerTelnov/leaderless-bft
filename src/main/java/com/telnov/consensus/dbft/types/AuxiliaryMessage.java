@@ -1,5 +1,8 @@
 package com.telnov.consensus.dbft.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import static com.telnov.consensus.dbft.types.AuxiliaryMessage.Builder.auxiliaryMessage;
 import static com.telnov.consensus.dbft.types.MessageType.AUX;
 import static java.lang.String.format;
 import static java.util.Objects.hash;
@@ -13,6 +16,17 @@ public class AuxiliaryMessage implements Message {
     public final PublicKey author;
     public final Round round;
     public final Set<Estimation> estimations;
+
+    @JsonCreator
+    public AuxiliaryMessage(@JsonProperty("author") PublicKey author,
+                            @JsonProperty("round") Round round,
+                            @JsonProperty("estimations") Set<Estimation> estimations,
+                            @JsonProperty("type") MessageType type) {
+        this(auxiliaryMessage()
+            .author(author)
+            .round(round)
+            .estimations(estimations));
+    }
 
     private AuxiliaryMessage(Builder builder) {
         this.author = requireNonNull(builder.author);

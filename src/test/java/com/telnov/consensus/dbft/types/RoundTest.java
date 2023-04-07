@@ -16,7 +16,7 @@ class RoundTest {
         var result = round(value);
 
         // then
-        assertThat(result.value).isEqualTo(value);
+        assertThat(result.value()).isEqualTo(value);
         assertThat(result).isEqualTo(round(value));
     }
 

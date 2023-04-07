@@ -3,6 +3,7 @@ package com.telnov.consensus.dbft;
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessageTestData.anAuxiliaryMessage;
 import com.telnov.consensus.dbft.types.BinaryCommitMessage;
+import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee;
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
@@ -83,7 +84,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     @Test
@@ -220,7 +221,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     @Test
@@ -265,7 +266,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     @Test
@@ -402,7 +403,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     @Test
@@ -463,7 +464,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     @Test
@@ -515,7 +516,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     @Test
@@ -567,7 +568,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new BinaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est)));
     }
 
     private static void assertWithRetry(Runnable runnable) {

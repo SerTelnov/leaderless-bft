@@ -1,12 +1,15 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.BinaryCommitMessage;
+import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
 import com.telnov.consensus.dbft.types.CommitMessage;
+import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
+import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.util.Comparator.comparing;
 import static java.util.UUID.randomUUID;
@@ -62,20 +65,20 @@ class ConsensusTest {
             binaryConsensus);
 
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new ProposedMultiValueMessage(name, proposedValue)));
+            .broadcast(proposedMultiValueMessage(name, proposedValue)));
 
         // when receive propose value
         given(client.binaryConsensusInvoked(name))
             .willReturn(false);
 
-        consensus.handle(new ProposedMultiValueMessage(name, proposedValue));
+        consensus.handle(proposedMultiValueMessage(name, proposedValue));
 
         // then
         assertWithRetry(() -> then(client).should(inOrder)
             .invokeBinaryConsensus(name, estimation(1)));
 
         // when
-        consensus.handle(new BinaryCommitMessage(name, estimation(1)));
+        consensus.handle(binaryCommitMessage(name, estimation(1)));
 
         // and BinCon wasn't involve for
         committee.participantsExcept(name)
@@ -90,16 +93,16 @@ class ConsensusTest {
 
         // when wait bin consensus quorum
         committee.participantsExcept(name)
-            .forEach(peer -> consensus.handle(new BinaryCommitMessage(peer, estimation(1))));
+            .forEach(peer -> consensus.handle(binaryCommitMessage(peer, estimation(1))));
 
         // and wait proposed value
         committee.participantsExcept(name)
-            .forEach(peer -> consensus.handle(new ProposedMultiValueMessage(peer, proposedValue)));
+            .forEach(peer -> consensus.handle(proposedMultiValueMessage(peer, proposedValue)));
 
         // then
         future.get(1, SECONDS);
         assertWithRetry(() -> then(sender).should(inOrder)
-            .broadcast(new CommitMessage(name, proposedValue)));
+            .broadcast(commitMessage(name, proposedValue)));
     }
 
     private void assertWithRetry(Runnable runnable) {

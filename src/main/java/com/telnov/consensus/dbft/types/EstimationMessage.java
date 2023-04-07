@@ -1,5 +1,8 @@
 package com.telnov.consensus.dbft.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import static com.telnov.consensus.dbft.types.EstimationMessage.Builder.estimationMessage;
 import static com.telnov.consensus.dbft.types.MessageType.EST;
 import static java.lang.String.format;
 import static java.util.Objects.hash;
@@ -12,6 +15,17 @@ public class EstimationMessage implements Message {
     public final PublicKey author;
     public final Round round;
     public final Estimation estimation;
+
+    @JsonCreator
+    public EstimationMessage(@JsonProperty("author") PublicKey author,
+                             @JsonProperty("round") Round round,
+                             @JsonProperty("estimation") Estimation estimation,
+                             @JsonProperty("type") MessageType type) {
+        this(estimationMessage()
+            .author(author)
+            .round(round)
+            .estimation(estimation));
+    }
 
     private EstimationMessage(Builder builder) {
         this.author = requireNonNull(builder.author);

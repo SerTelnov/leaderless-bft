@@ -3,6 +3,7 @@ package com.telnov.consensus.dbft;
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessage.Builder.auxiliaryMessage;
 import com.telnov.consensus.dbft.types.BinaryCommitMessage;
+import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.CoordinatorMessage;
 import static com.telnov.consensus.dbft.types.CoordinatorMessage.Builder.coordinatorMessage;
@@ -79,11 +80,11 @@ public class BinaryConsensus implements MessageHandler {
 
             final var roundDecision = roundDecision(round, mineAuxiliary, auxiliaryWithTolerantFilter);
 
-            final var b = round.value % 2;
+            final var b = round.value() % 2;
             if (roundDecision.size() == 1) {
                 estimation = roundDecision.iterator().next();
 
-                if (b == estimation.value) {
+                if (b == estimation.value()) {
                     if (consensusDecision.isEmpty()) {
                         consensusDecision.add(new ConsensusDecision(round, estimation));
                     }
@@ -97,7 +98,7 @@ public class BinaryConsensus implements MessageHandler {
         }
 
         final var decision = consensusDecision.get(0);
-        sender.broadcast(new BinaryCommitMessage(name, decision.estimation));
+        sender.broadcast(binaryCommitMessage(name, decision.estimation));
     }
 
     private boolean onTerminationState(Round round) {
@@ -240,7 +241,7 @@ public class BinaryConsensus implements MessageHandler {
     }
 
     private boolean isTimeUpFor(long startWaitingSince, Round round) {
-        final long waitingTime = timerAugender.toMillis() * round.value;
+        final long waitingTime = timerAugender.toMillis() * round.value();
         return System.currentTimeMillis() - startWaitingSince >= waitingTime;
     }
 

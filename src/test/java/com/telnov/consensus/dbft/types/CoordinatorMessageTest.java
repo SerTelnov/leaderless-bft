@@ -48,6 +48,6 @@ class CoordinatorMessageTest {
         // then
         assertThat(msg.toString())
             .isEqualTo("COORD:[Author:%s,%s,Impose:%s]",
-                msg.author, msg.round, msg.imposeEstimation.value);
+                msg.author, msg.round, msg.imposeEstimation.value());
     }
 }

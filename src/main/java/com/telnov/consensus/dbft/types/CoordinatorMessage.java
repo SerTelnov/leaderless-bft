@@ -1,5 +1,7 @@
 package com.telnov.consensus.dbft.types;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import static com.telnov.consensus.dbft.types.MessageType.COORD;
 import static java.lang.String.format;
 import static java.util.Objects.hash;
@@ -11,6 +13,16 @@ public class CoordinatorMessage implements Message {
     public final PublicKey author;
     public final Round round;
     public final Estimation imposeEstimation;
+
+    @JsonCreator
+    public CoordinatorMessage(@JsonProperty("author") PublicKey author,
+                              @JsonProperty("round") Round round,
+                              @JsonProperty("imposeEstimation") Estimation imposeEstimation,
+                              @JsonProperty("type") MessageType ignored) {
+        this.author = author;
+        this.round = round;
+        this.imposeEstimation = imposeEstimation;
+    }
 
     public CoordinatorMessage(Builder builder) {
         this.author = builder.author;
@@ -43,7 +55,7 @@ public class CoordinatorMessage implements Message {
 
     @Override
     public String toString() {
-        return format("COORD:[Author:%s,%s,Impose:%s]", author, round, imposeEstimation.value);
+        return format("COORD:[Author:%s,%s,Impose:%s]", author, round, imposeEstimation.value());
     }
 
     public static class Builder {
