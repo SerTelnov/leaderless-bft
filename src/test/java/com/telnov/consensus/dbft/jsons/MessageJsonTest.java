@@ -6,7 +6,6 @@ import static com.telnov.consensus.dbft.jsons.MessageJson.deserialize;
 import static com.telnov.consensus.dbft.jsons.ObjectMapperConfigure.objectMapper;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessageTestData.anAuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
-import com.telnov.consensus.dbft.types.CommitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
@@ -17,8 +16,10 @@ import static com.telnov.consensus.dbft.types.ProposedMultiValueMessageTestData.
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import static uk.org.webcompere.modelassert.json.JsonAssertions.assertJson;
 
 import java.util.stream.Stream;
 
@@ -44,6 +45,22 @@ class MessageJsonTest {
             aRandomProposedMultiValueMessage(),
             commitMessage(new PublicKey(randomUUID()), aRandomProposalBlock())
         );
+    }
+
+    @Test
+    void should_serialize_estimation_message() {
+        // given
+        var message = anEstimationMessage().build();
+
+        // when
+        var result = MessageJson.serialize(message);
+
+        // then
+        assertJson(result)
+            .at("/type").isText("EST")
+            .at("/author/key").isText(message.author.key().toString())
+            .at("/round/value").isNumberEqualTo(message.round.value())
+            .at("/estimation/value").isNumberEqualTo(message.estimation.value());
     }
 
     private JsonNode parse(String obj) throws JsonProcessingException {

@@ -2,7 +2,6 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessage.Builder.auxiliaryMessage;
-import com.telnov.consensus.dbft.types.BinaryCommitMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.CoordinatorMessage;
@@ -38,7 +37,7 @@ public class BinaryConsensus implements MessageHandler {
     private final Duration timerAugender;
 
     private final PublicKey name;
-    private final Sender sender;
+    private final MessageBroadcaster broadcaster;
     private final Committee committee;
     private final CoordinatorFinder coordinatorFinder;
     private final EstimationReceiver estimationReceiver;
@@ -53,12 +52,12 @@ public class BinaryConsensus implements MessageHandler {
     public BinaryConsensus(Duration timerAugender,
                            PublicKey name,
                            Committee committee,
-                           Sender sender,
+                           MessageBroadcaster broadcaster,
                            CoordinatorFinder coordinatorFinder) {
         this.timerAugender = timerAugender;
         this.name = name;
         this.committee = committee;
-        this.sender = sender;
+        this.broadcaster = broadcaster;
         this.estimationReceiver = new EstimationReceiver(committee);
         this.coordinatorFinder = coordinatorFinder;
     }
@@ -98,7 +97,7 @@ public class BinaryConsensus implements MessageHandler {
         }
 
         final var decision = consensusDecision.get(0);
-        sender.broadcast(binaryCommitMessage(name, decision.estimation));
+        broadcaster.broadcast(binaryCommitMessage(name, decision.estimation));
     }
 
     private boolean onTerminationState(Round round) {
@@ -153,7 +152,7 @@ public class BinaryConsensus implements MessageHandler {
                 .iterator()
                 .next();
 
-            sender.broadcast(coordinatorMessage()
+            broadcaster.broadcast(coordinatorMessage()
                 .author(name)
                 .round(round)
                 .imposeEstimation(firstReceivedEst)
@@ -216,7 +215,7 @@ public class BinaryConsensus implements MessageHandler {
     }
 
     private void estWith(Estimation estimation, Round round) {
-        sender.broadcast(estimationMessage()
+        broadcaster.broadcast(estimationMessage()
             .author(name)
             .round(round)
             .estimation(estimation)
@@ -231,7 +230,7 @@ public class BinaryConsensus implements MessageHandler {
             .map(Set::of)
             .orElse(notFaultEstimations);
 
-        sender.broadcast(auxiliaryMessage()
+        broadcaster.broadcast(auxiliaryMessage()
             .author(name)
             .round(round)
             .estimations(auxiliary)

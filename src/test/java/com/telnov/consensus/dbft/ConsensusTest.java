@@ -1,14 +1,11 @@
 package com.telnov.consensus.dbft;
 
-import com.telnov.consensus.dbft.types.BinaryCommitMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
-import com.telnov.consensus.dbft.types.CommitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
-import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.util.Comparator.comparing;
@@ -33,18 +30,18 @@ class ConsensusTest {
 
     private final ExecutorService asyncConsensusRunnableService = Executors.newFixedThreadPool(1);
 
-    private final Sender sender = mock(Sender.class);
+    private final MessageBroadcaster broadcaster = mock(MessageBroadcaster.class);
     private final Client client = mock(Client.class);
     private final PublicKey name = new PublicKey(randomUUID());
     private final Committee committee = spy(aRandomCommitteeWith(4, name));
     private final BinaryConsensus binaryConsensus = mock(BinaryConsensus.class);
 
-    private final Consensus consensus = new Consensus(name, committee, sender, client);
+    private final Consensus consensus = new Consensus(name, committee, broadcaster, client);
 
     @BeforeEach
     void setup() {
         given(committee.participantsExcept(name))
-            .willAnswer(invocation -> committee.participants
+            .willAnswer(invocation -> committee.participants()
                 .stream()
                 .filter(not(p -> p.equals(name)))
                 .collect(toCollection(() -> new TreeSet<>(comparing(PublicKey::key)))));
@@ -60,11 +57,11 @@ class ConsensusTest {
 
         // then
         var inOrder = inOrder(
-            sender,
+            broadcaster,
             client,
             binaryConsensus);
 
-        assertWithRetry(() -> then(sender).should(inOrder)
+        assertWithRetry(() -> then(broadcaster).should(inOrder)
             .broadcast(proposedMultiValueMessage(name, proposedValue)));
 
         // when receive propose value
@@ -101,7 +98,7 @@ class ConsensusTest {
 
         // then
         future.get(1, SECONDS);
-        assertWithRetry(() -> then(sender).should(inOrder)
+        assertWithRetry(() -> then(broadcaster).should(inOrder)
             .broadcast(commitMessage(name, proposedValue)));
     }
 

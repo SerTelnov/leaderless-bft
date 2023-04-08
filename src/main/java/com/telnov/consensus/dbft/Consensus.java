@@ -1,7 +1,6 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.BinaryCommitMessage;
-import com.telnov.consensus.dbft.types.CommitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.Estimation;
@@ -12,17 +11,19 @@ import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.util.function.Predicate.not;
+import net.jcip.annotations.NotThreadSafe;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@NotThreadSafe
 public class Consensus implements MessageHandler {
 
     private final PublicKey name;
     private final Committee committee;
-    private final Sender sender;
+    private final MessageBroadcaster broadcaster;
     private final Client client;
 
     private final Map<PublicKey, ProposalBlock> proposals = new ConcurrentHashMap<>();
@@ -31,16 +32,16 @@ public class Consensus implements MessageHandler {
 
     public Consensus(PublicKey name,
                      Committee committee,
-                     Sender sender,
+                     MessageBroadcaster broadcaster,
                      Client client) {
         this.name = name;
         this.committee = committee;
-        this.sender = sender;
+        this.broadcaster = broadcaster;
         this.client = client;
     }
 
     public void propose(ProposalBlock newBlock) {
-        sender.broadcast(proposedMultiValueMessage(name, newBlock));
+        broadcaster.broadcast(proposedMultiValueMessage(name, newBlock));
 
         do {
             proposals.keySet()
@@ -63,7 +64,7 @@ public class Consensus implements MessageHandler {
             break;
         }
 
-        sender.broadcast(commitMessage(name, proposals.get(firstReceivedBinProposal)));
+        broadcaster.broadcast(commitMessage(name, proposals.get(firstReceivedBinProposal)));
     }
 
     private boolean hasPositiveBinProposals() {

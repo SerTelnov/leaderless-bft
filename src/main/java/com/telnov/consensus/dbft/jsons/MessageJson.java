@@ -12,6 +12,7 @@ import com.telnov.consensus.dbft.types.Message;
 import com.telnov.consensus.dbft.types.MessageType;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 
 public final class MessageJson {
@@ -24,6 +25,15 @@ public final class MessageJson {
             final var type = MessageType.valueOf(node.get("type").asText());
             return objectMapper.readValue(node.toString(), messageClass(type));
         } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static JsonNode serialize(Message message) {
+        try {
+            final var bytes = objectMapper.writeValueAsBytes(message);
+            return objectMapper.readTree(bytes);
+        } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }

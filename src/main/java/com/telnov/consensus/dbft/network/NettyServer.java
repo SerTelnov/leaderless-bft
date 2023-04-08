@@ -2,6 +2,8 @@ package com.telnov.consensus.dbft.network;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
+import static io.netty.channel.ChannelOption.SO_BACKLOG;
+import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -34,9 +36,12 @@ public class NettyServer implements Server {
                         final var pipeline = ch.pipeline();
 
                         pipeline.addLast(new JsonObjectDecoder());
+                        pipeline.addLast(new JsonNodeDecoder());
                         pipeline.addLast(new ServerHandler(jsonHandler));
                     }
-                });
+                })
+                .option(SO_BACKLOG, 128)
+                .childOption(SO_KEEPALIVE, true);
 
             // Bind and start to accept incoming connections.
             final var channel = bootstrap.bind(port).sync();

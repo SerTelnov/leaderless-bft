@@ -8,6 +8,10 @@ import static java.util.UUID.randomUUID;
 public class ProposedMultiValueMessageTestData {
 
     public static ProposedMultiValueMessage aRandomProposedMultiValueMessage() {
-        return proposedMultiValueMessage(publicKey(randomUUID()), aRandomProposalBlock());
+        return aRandomProposedMultiValueMessage(publicKey(randomUUID()));
+    }
+
+    public static ProposedMultiValueMessage aRandomProposedMultiValueMessage(PublicKey author) {
+        return proposedMultiValueMessage(author, aRandomProposalBlock());
     }
 }
