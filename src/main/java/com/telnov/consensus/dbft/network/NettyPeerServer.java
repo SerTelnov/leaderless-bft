@@ -9,11 +9,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.json.JsonObjectDecoder;
 
-public class NettyServer implements Server {
+public class NettyPeerServer implements Server {
 
     private final JsonHandler jsonHandler;
 
-    public NettyServer(JsonHandler jsonHandler) {
+    public NettyPeerServer(JsonHandler jsonHandler) {
         this.jsonHandler = jsonHandler;
     }
 
