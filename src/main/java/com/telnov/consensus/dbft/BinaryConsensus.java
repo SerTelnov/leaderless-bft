@@ -28,8 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @NotThreadSafe
 public class BinaryConsensus implements MessageHandler {
@@ -42,8 +41,7 @@ public class BinaryConsensus implements MessageHandler {
     private final CoordinatorFinder coordinatorFinder;
     private final EstimationReceiver estimationReceiver;
 
-    private final AtomicReference<Round> consensusRound = new AtomicReference<>(round(0));
-    private final Map<Round, List<Estimation>> receivedEstimations = new ConcurrentHashMap<>();
+    private final Map<Round, Set<Estimation>> receivedEstimations = new ConcurrentHashMap<>();
     private final Map<Round, Map<PublicKey, Set<Estimation>>> receivedAux = new ConcurrentHashMap<>();
     private final Map<Round, Estimation> coordinatorImposes = new ConcurrentHashMap<>();
 
@@ -63,8 +61,10 @@ public class BinaryConsensus implements MessageHandler {
     }
 
     public void propose(Estimation estimation) {
-        while (true) {
-            final Round round = setupNextRound();
+        Round round = round(0);
+
+        do {
+            round = setupNextRound(round);
 
             estWith(estimation, round);
             while (true) if (!receivedEstimations.get(round).isEmpty()) {
@@ -91,10 +91,7 @@ public class BinaryConsensus implements MessageHandler {
             } else {
                 estimation = estimation(b);
             }
-
-            if (onTerminationState(round))
-                break;
-        }
+        } while (!onTerminationState(round));
 
         final var decision = consensusDecision.get(0);
         broadcaster.broadcast(binaryCommitMessage(name, decision.estimation));
@@ -129,11 +126,11 @@ public class BinaryConsensus implements MessageHandler {
             .orElseThrow(() -> new IllegalStateException("Consensus impossible on " + round));
     }
 
-    private Round setupNextRound() {
-        final var round = consensusRound.updateAndGet(Round::next);
-        receivedEstimations.putIfAbsent(round, new CopyOnWriteArrayList<>());
-        receivedAux.putIfAbsent(round, new ConcurrentHashMap<>());
-        return round;
+    private Round setupNextRound(Round round) {
+        final var nextRound = round.next();
+        receivedEstimations.putIfAbsent(nextRound, new CopyOnWriteArraySet<>());
+        receivedAux.putIfAbsent(nextRound, new ConcurrentHashMap<>());
+        return nextRound;
     }
 
     private void waitReceivingAuxiliaryEstimation(Round round) {
@@ -198,7 +195,7 @@ public class BinaryConsensus implements MessageHandler {
     private void handleEst(EstimationMessage est) {
         estimationReceiver.receive(est)
             .ifPresent(estimation -> {
-                receivedEstimations.putIfAbsent(est.round, new CopyOnWriteArrayList<>());
+                receivedEstimations.putIfAbsent(est.round, new CopyOnWriteArraySet<>());
                 receivedEstimations.get(est.round).add(estimation);
             });
     }

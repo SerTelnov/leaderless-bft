@@ -17,4 +17,8 @@ public record BlockHeight(long value) {
     public String toString() {
         return "Height:" + value;
     }
+
+    public BlockHeight increment() {
+        return blockHeight(value + 1);
+    }
 }

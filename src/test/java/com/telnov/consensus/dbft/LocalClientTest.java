@@ -2,6 +2,7 @@ package com.telnov.consensus.dbft;
 
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
+import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,5 +85,22 @@ class LocalClientTest {
 
         // then
         then(messageHandler).shouldHaveZeroInteractions();
+    }
+
+    @Test
+    void should_clear_binary_consensus_invoked_on_commit() {
+        // setup
+        client.invokeBinaryConsensus(peer, estimation(1));
+
+        assertThat(client.binaryConsensusInvoked(peer)).isTrue();
+
+        // given
+        var proposalBlock = aRandomProposalBlock();
+
+        // when
+        client.onCommit(proposalBlock);
+
+        // then
+        assertThat(client.binaryConsensusInvoked(peer)).isFalse();
     }
 }

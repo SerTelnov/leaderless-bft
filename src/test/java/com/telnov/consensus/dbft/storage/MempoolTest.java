@@ -1,6 +1,10 @@
 package com.telnov.consensus.dbft.storage;
 
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
+import static com.telnov.consensus.dbft.types.ProposalBlock.proposalBlock;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransaction;
+import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
+import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,5 +51,25 @@ class MempoolTest {
         // then
         then(mempoolListener).should()
             .proposalBlockIsReady(transactions);
+    }
+
+    @Test
+    void should_clear_transactions_from_commit() {
+        // given
+        final var transactions = aRandomTransactions(15);
+        final var committedTransactions = transactions.subList(3, 12);
+        final var committedBlock = proposalBlock(blockHeight(4), committedTransactions);
+
+        transactions.forEach(mempool::add);
+
+        // when
+        mempool.onCommit(committedBlock);
+
+        // then
+        transactions.stream()
+            .filter(not(committedTransactions::contains))
+            .forEach(tx -> assertThat(mempool.contains(tx)).isTrue());
+        committedTransactions
+            .forEach(tx -> assertThat(mempool.contains(tx)).isFalse());
     }
 }

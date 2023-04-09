@@ -20,4 +20,8 @@ public class CommitsMessageHandler implements MessageHandler {
             commitBlockPerPeers.put(message.author(), commitMessage.proposedBlock);
         }
     }
+
+    public void clear() {
+        commitBlockPerPeers.clear();
+    }
 }

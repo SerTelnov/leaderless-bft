@@ -35,4 +35,11 @@ class BlockHeightTest {
             .asString()
             .isEqualTo("Height:7");
     }
+
+    @Test
+    void should_increment_block_height() {
+        // then
+        assertThat(blockHeight(9).increment())
+            .isEqualTo(blockHeight(10));
+    }
 }

@@ -5,6 +5,7 @@ import com.telnov.consensus.dbft.network.CommitteeWithAddresses;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.network.NettyPeerServer;
 import com.telnov.consensus.dbft.network.PeerAddress;
+import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.Committee.committee;
 import static com.telnov.consensus.dbft.types.PeerNumber.number;
@@ -13,52 +14,52 @@ import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey
 
 import java.util.Map;
 
-public interface FunctionalTestSetup {
+public class FunctionalTestSetup {
 
-    PublicKey node1 = aRandomPublicKey();
-    PublicKey node2 = aRandomPublicKey();
-    PublicKey node3 = aRandomPublicKey();
-    PublicKey node4 = aRandomPublicKey();
+    public static final PublicKey node1 = aRandomPublicKey();
+    public static final PublicKey node2 = aRandomPublicKey();
+    public static final PublicKey node3 = aRandomPublicKey();
+    public static final PublicKey node4 = aRandomPublicKey();
 
-    Committee committee = committee(Map.of(
+    public static final Committee committee = committee(Map.of(
         node1, number(0),
         node2, number(1),
         node3, number(2),
         node4, number(3)
     ));
 
-    int port = 3000;
+    private static final int port = 3000;
 
-    CommitteeWithAddresses committeeWithAddresses = new CommitteeWithAddresses(committee, Map.of(
+    public static final CommitteeWithAddresses committeeWithAddresses = new CommitteeWithAddresses(committee, Map.of(
         node1, new PeerAddress("localhost", port),
         node2, new PeerAddress("localhost", port + 1),
         node3, new PeerAddress("localhost", port + 2),
         node4, new PeerAddress("localhost", port + 3)
     ));
 
-    CoordinatorFinder coordinatorFinder = new CoordinatorFinder(committee);
+    private static final CoordinatorFinder coordinatorFinder = new CoordinatorFinder(committee);
 
-    default NettyBroadcastClient networkBroadcastClientFor(PublicKey peer) {
+    public static NettyBroadcastClient networkBroadcastClientFor(PublicKey peer) {
         return new NettyBroadcastClient(committeeWithAddresses.addressesExcept(peer));
     }
 
-    default PeerMessageBroadcaster peerMessageBroadcaster(MessageBroadcaster networkBroadcaster) {
+    public static PeerMessageBroadcaster peerMessageBroadcaster(MessageBroadcaster networkBroadcaster) {
         return new PeerMessageBroadcaster(networkBroadcaster);
     }
 
-    default LocalClient localClientFor(PublicKey peer) {
+    public static LocalClient localClientFor(PublicKey peer) {
         return new LocalClient(peer);
     }
 
-    default ConsensusModuleFactory consensusModuleFactory(MessageBroadcaster messageBroadcaster, Client client) {
+    public static ConsensusModuleFactory consensusModuleFactory(MessageBroadcaster messageBroadcaster, Client client) {
         return new ConsensusModuleFactory(committee, messageBroadcaster, client, coordinatorFinder);
     }
 
-    default PeerServer peerServerFor(PublicKey peer, ConsensusModuleFactory consensusModuleFactory) {
-        return new PeerServer(peer, committee, consensusModuleFactory);
+    public static PeerServer peerServerFor(PublicKey peer, BlockChain blockChain, ConsensusModuleFactory consensusModuleFactory) {
+        return new PeerServer(peer, committee, blockChain, consensusModuleFactory);
     }
 
-    default void runServerFor(PublicKey peer, PeerServer peerServer) {
+    public static void runServerFor(PublicKey peer, PeerServer peerServer) {
         new Thread(() -> {
             try {
                 new NettyPeerServer(jsonMessageHandler(peerServer))
@@ -69,7 +70,7 @@ public interface FunctionalTestSetup {
         }).start();
     }
 
-    default void runBroadcastClientFor(NettyBroadcastClient networkBroadcastClient) {
+    public static void runBroadcastClientFor(NettyBroadcastClient networkBroadcastClient) {
         new Thread(() -> {
             try {
                 networkBroadcastClient.run();

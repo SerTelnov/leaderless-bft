@@ -1,14 +1,16 @@
 package com.telnov.consensus.dbft;
 
+import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
 import com.telnov.consensus.dbft.types.Estimation;
 import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
+import com.telnov.consensus.dbft.types.ProposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class LocalClient implements Client {
+public class LocalClient implements Client, CommitListener {
 
     private final PublicKey localPeer;
     private final List<MessageHandler> messageHandlers = new CopyOnWriteArrayList<>();
@@ -39,5 +41,10 @@ public class LocalClient implements Client {
 
     public void subscribe(MessageHandler messageHandler) {
         messageHandlers.add(messageHandler);
+    }
+
+    @Override
+    public void onCommit(ProposalBlock block) {
+        localBinConsensusInvoked.set(false);
     }
 }

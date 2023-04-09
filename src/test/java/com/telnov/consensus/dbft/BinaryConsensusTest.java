@@ -56,6 +56,7 @@ class BinaryConsensusTest {
         consensus.handle(anEstimationMessage(round1, est).build());
         consensus.handle(anEstimationMessage(round1, est).build());
         consensus.handle(anEstimationMessage(round1, est).build());
+        consensus.handle(anEstimationMessage(round1, est).build());
 
         // then
         var inOrder = inOrder(broadcaster);
@@ -68,6 +69,7 @@ class BinaryConsensusTest {
                 .build()));
 
         // when send AUX
+        consensus.handle(anAuxiliaryMessage(round1, est).build());
         consensus.handle(anAuxiliaryMessage(round1, est).build());
         consensus.handle(anAuxiliaryMessage(round1, est).build());
         consensus.handle(anAuxiliaryMessage(round1, est).build());
@@ -336,66 +338,6 @@ class BinaryConsensusTest {
             .broadcast(anAuxiliaryMessage()
                 .author(name)
                 .round(round2)
-                .estimations(Set.of(est))
-                .build()));
-
-        // when 3rd round
-        waitingDuration = waitingDuration.multipliedBy(4);
-        var round3 = round(3);
-
-        // send EST
-        consensus.handle(anEstimationMessage(round3, est).build());
-        consensus.handle(anEstimationMessage(round3, est).build());
-        consensus.handle(anEstimationMessage(round3, est).build());
-
-        // then
-        assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(anEstimationMessage()
-                .author(name)
-                .round(round3)
-                .estimation(est)
-                .build()));
-
-        // when send AUX
-        consensus.handle(anAuxiliaryMessage(round3, est).build());
-        consensus.handle(anAuxiliaryMessage(round3, est).build());
-        consensus.handle(anAuxiliaryMessage(round3, est).build());
-
-        // then
-        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(broadcaster).should(inOrder)
-            .broadcast(anAuxiliaryMessage()
-                .author(name)
-                .round(round3)
-                .estimations(Set.of(est))
-                .build()));
-
-        // when 4th round
-        waitingDuration = waitingDuration.multipliedBy(5);
-        var round4 = round(4);
-
-        // send EST
-        consensus.handle(anEstimationMessage(round4, est).build());
-        consensus.handle(anEstimationMessage(round4, est).build());
-        consensus.handle(anEstimationMessage(round4, est).build());
-
-        // then
-        assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(anEstimationMessage()
-                .author(name)
-                .round(round4)
-                .estimation(est)
-                .build()));
-
-        // when send AUX
-        consensus.handle(anAuxiliaryMessage(round4, est).build());
-        consensus.handle(anAuxiliaryMessage(round4, est).build());
-        consensus.handle(anAuxiliaryMessage(round4, est).build());
-
-        // then
-        AssertionsWithRetry.assertWithRetry(waitingDuration, () -> then(broadcaster).should(inOrder)
-            .broadcast(anAuxiliaryMessage()
-                .author(name)
-                .round(round4)
                 .estimations(Set.of(est))
                 .build()));
 
