@@ -2,8 +2,11 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.ConsensusModuleFactory.ConsensusModule;
 import com.telnov.consensus.dbft.errors.PublicKeyNotFound;
+import static com.telnov.consensus.dbft.tests.AssertionsWithRetry.assertWithRetry;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
+import static com.telnov.consensus.dbft.types.Estimation.estimation;
+import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessageTestData;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessageTestData.aRandomProposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
@@ -15,6 +18,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+
+import java.time.Duration;
 
 class PeerServerTest {
 
@@ -74,5 +79,18 @@ class PeerServerTest {
         // then
         then(consensusModuleFactory).should(times(1))
             .generateConsensusModules(name);
+    }
+
+    @Test
+    void should_invoke_binary_consensus_on_initiate_estimate_message() {
+        // given
+        final var initialEstimationMessage = initialEstimationMessage(name, estimation(1));
+
+        // when
+        server.handle(initialEstimationMessage);
+
+        // then
+        assertWithRetry(Duration.ofMillis(10), () -> then(binaryConsensus).should()
+            .propose(estimation(1)));
     }
 }

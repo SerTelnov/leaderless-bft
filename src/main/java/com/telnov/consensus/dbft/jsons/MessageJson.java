@@ -8,6 +8,7 @@ import com.telnov.consensus.dbft.types.BinaryCommitMessage;
 import com.telnov.consensus.dbft.types.CommitMessage;
 import com.telnov.consensus.dbft.types.CoordinatorMessage;
 import com.telnov.consensus.dbft.types.EstimationMessage;
+import com.telnov.consensus.dbft.types.InitialEstimationMessage;
 import com.telnov.consensus.dbft.types.Message;
 import com.telnov.consensus.dbft.types.MessageType;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
@@ -41,6 +42,7 @@ public final class MessageJson {
     @SuppressWarnings("unchecked")
     private static <T extends Message> Class<T> messageClass(MessageType type) {
         return (Class<T>) switch (type) {
+            case INIT_EST -> InitialEstimationMessage.class;
             case EST -> EstimationMessage.class;
             case AUX -> AuxiliaryMessage.class;
             case COORD -> CoordinatorMessage.class;

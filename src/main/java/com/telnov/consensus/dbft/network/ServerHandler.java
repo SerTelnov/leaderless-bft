@@ -19,7 +19,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         LOG.debug("Received message: " + msg);
-        jsonHandler.handle(((JsonNode) msg).get("message"));
+        jsonHandler.handle(((JsonNode) msg));
     }
 
     @Override

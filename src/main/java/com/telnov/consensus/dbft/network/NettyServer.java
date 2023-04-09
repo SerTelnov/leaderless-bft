@@ -18,7 +18,7 @@ public class NettyServer implements Server {
     }
 
     @Override
-    public void run(final int port) throws Exception {
+    public void run(PeerAddress address) throws Exception {
         final var bossGroup = new NioEventLoopGroup();
         final var workerGroup = new NioEventLoopGroup();
 
@@ -44,7 +44,7 @@ public class NettyServer implements Server {
                 .childOption(SO_KEEPALIVE, true);
 
             // Bind and start to accept incoming connections.
-            final var channel = bootstrap.bind(port).sync();
+            final var channel = bootstrap.bind(address.host(), address.port()).sync();
 
             // Wait until server socket is closed
             channel.channel()

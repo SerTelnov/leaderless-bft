@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft;
 
+import com.telnov.consensus.dbft.tests.AssertionsWithRetry;
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessageTestData.anAuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;

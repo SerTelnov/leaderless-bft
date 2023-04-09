@@ -1,42 +1,32 @@
 package com.telnov.consensus.dbft.network;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import static com.telnov.consensus.dbft.jsons.ObjectMapperConfigure.objectMapper;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 
 public class JsonNodeDecoder extends ByteToMessageDecoder {
 
+    private final Logger LOG = LogManager.getLogger(JsonNodeDecoder.class);
+
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        if (in.readableBytes() < 4) {
-            return;
-        }
-
-        in.markReaderIndex();
-        final int length = in.readInt();
-
-        if (in.readableBytes() < length) {
-            in.resetReaderIndex();
-            return;
-        }
-
-        final byte[] jsonBytes = new byte[length];
-        in.readBytes(jsonBytes);
-        JsonNode jsonNode = parse(jsonBytes);
-
-        out.add(jsonNode);
-    }
-
-    private static JsonNode parse(byte[] jsonBytes) {
         try {
-            return objectMapper.readTree(jsonBytes);
+            final var parser = objectMapper.getFactory()
+                .createParser((InputStream) new ByteBufInputStream(in));
+
+            final var jsonNode = objectMapper.readTree(parser);
+            out.add(jsonNode);
         } catch (IOException e) {
+            LOG.error("Error on parsing json message", e);
             throw new UncheckedIOException(e);
         }
     }

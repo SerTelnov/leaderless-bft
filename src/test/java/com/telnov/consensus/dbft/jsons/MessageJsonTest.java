@@ -10,11 +10,11 @@ import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
+import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
 import com.telnov.consensus.dbft.types.Message;
 import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessageTestData.aRandomProposedMultiValueMessage;
-import com.telnov.consensus.dbft.types.PublicKey;
-import static java.util.UUID.randomUUID;
+import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,12 +38,13 @@ class MessageJsonTest {
 
     static Stream<Message> messages() {
         return Stream.of(
+            initialEstimationMessage(aRandomPublicKey(), estimation(1)),
             anEstimationMessage().build(),
             anAuxiliaryMessage().build(),
             aCoordinatorMessage().build(),
-            binaryCommitMessage(new PublicKey(randomUUID()), estimation(1)),
+            binaryCommitMessage(aRandomPublicKey(), estimation(1)),
             aRandomProposedMultiValueMessage(),
-            commitMessage(new PublicKey(randomUUID()), aRandomProposalBlock())
+            commitMessage(aRandomPublicKey(), aRandomProposalBlock())
         );
     }
 

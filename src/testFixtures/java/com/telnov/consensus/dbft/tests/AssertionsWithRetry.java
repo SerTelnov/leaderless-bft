@@ -1,4 +1,4 @@
-package com.telnov.consensus.dbft;
+package com.telnov.consensus.dbft.tests;
 
 import java.time.Duration;
 
