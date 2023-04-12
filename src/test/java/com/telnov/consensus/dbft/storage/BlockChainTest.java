@@ -27,21 +27,15 @@ class BlockChainTest {
         // then
         assertThat(blockChain.currentHeight())
             .isEqualTo(blockHeight(1));
+        assertThat(blockChain.blocks())
+            .containsOnly(proposalBlock);
     }
 
     @Test
-    void should_ignore_duplication_on_commit() {
-        // given
-        var proposalBlock = aRandomProposalBlock();
-
-        // when
-        blockChain.onCommit(proposalBlock);
-        blockChain.onCommit(proposalBlock);
-        blockChain.onCommit(proposalBlock);
-
+    void should_override_to_string() {
         // then
-        assertThat(blockChain.currentHeight())
-            .isEqualTo(blockHeight(1));
-
+        assertThat(blockChain)
+            .asString()
+            .isEqualTo("BlockChain:[Height:0]");
     }
 }

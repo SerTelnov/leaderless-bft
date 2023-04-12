@@ -3,6 +3,7 @@ package com.telnov.consensus.dbft;
 import com.telnov.consensus.dbft.ConsensusModuleFactory.ConsensusModule;
 import com.telnov.consensus.dbft.errors.PublicKeyNotFound;
 import com.telnov.consensus.dbft.storage.BlockChain;
+import com.telnov.consensus.dbft.storage.UnprocessedTransactionsPublisher;
 import static com.telnov.consensus.dbft.tests.AssertionsWithRetry.assertWithRetry;
 import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import com.telnov.consensus.dbft.types.CommitMessage;
@@ -11,14 +12,17 @@ import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
+import static com.telnov.consensus.dbft.types.MempoolCoordinatorMessage.mempoolCoordinatorMessage;
 import static com.telnov.consensus.dbft.types.ProposalBlock.proposalBlock;
+import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlockWith;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposedMultiValueMessage;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessageTestData.aRandomProposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
+import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransaction;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
-import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,14 +37,16 @@ import java.util.List;
 
 class PeerServerTest {
 
-    private final PublicKey name = new PublicKey(randomUUID());
+    private final PublicKey name = aRandomPublicKey();
+    private final PublicKey mempoolCoordinatorPK = aRandomPublicKey();
     private final Committee committee = aRandomCommitteeWith(4, name);
     private final ConsensusModuleFactory consensusModuleFactory = mock(ConsensusModuleFactory.class);
     private final Consensus consensus = mock(Consensus.class);
     private final BinaryConsensus binaryConsensus = mock(BinaryConsensus.class);
     private final BlockChain blockChain = mock(BlockChain.class);
+    private final UnprocessedTransactionsPublisher unprocessedTransactionsPublisher = mock(UnprocessedTransactionsPublisher.class);
 
-    private final PeerServer server = new PeerServer(name, committee, blockChain, consensusModuleFactory);
+    private final PeerServer server = new PeerServer(name, mempoolCoordinatorPK, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
 
     @BeforeEach
     void setup() {
@@ -221,5 +227,29 @@ class PeerServerTest {
         assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
             .should(inOrder)
             .generateConsensusModules(name));
+    }
+
+    @Test
+    void should_propagate_mempool_coordinator_message() {
+        // given
+        var transactions = aRandomTransactions(2);
+        var mempoolCoordinatorMessage = mempoolCoordinatorMessage(mempoolCoordinatorPK, transactions);
+
+        // when
+        server.handle(mempoolCoordinatorMessage);
+
+        // then
+        then(unprocessedTransactionsPublisher).should()
+            .publishNewUnprocessed(transactions);
+    }
+
+    @Test
+    void should_not_fail_on_commit_if_authors_of_commit_is_empty() {
+        // then
+        assertThatCode(() -> {
+            server.onCommit(aRandomProposalBlock());
+            server.proposalBlockIsReady(aRandomTransactions(1));
+        })
+            .doesNotThrowAnyException();
     }
 }

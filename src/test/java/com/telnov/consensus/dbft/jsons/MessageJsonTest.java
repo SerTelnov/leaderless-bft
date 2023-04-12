@@ -11,10 +11,12 @@ import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordi
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
 import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
+import static com.telnov.consensus.dbft.types.MempoolCoordinatorMessage.mempoolCoordinatorMessage;
 import com.telnov.consensus.dbft.types.Message;
 import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessageTestData.aRandomProposedMultiValueMessage;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
+import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,7 +46,8 @@ class MessageJsonTest {
             aCoordinatorMessage().build(),
             binaryCommitMessage(aRandomPublicKey(), estimation(1)),
             aRandomProposedMultiValueMessage(),
-            commitMessage(aRandomPublicKey(), aRandomProposalBlock())
+            commitMessage(aRandomPublicKey(), aRandomProposalBlock()),
+            mempoolCoordinatorMessage(aRandomPublicKey(), aRandomTransactions(10))
         );
     }
 

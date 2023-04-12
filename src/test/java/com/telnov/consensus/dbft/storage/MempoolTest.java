@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 class MempoolTest {
@@ -31,7 +32,7 @@ class MempoolTest {
         final var transaction = aRandomTransaction();
 
         // when
-        mempool.add(transaction);
+        mempool.add(List.of(transaction));
 
         // then
         assertThat(mempool.contains(transaction)).isTrue();
@@ -46,7 +47,7 @@ class MempoolTest {
             .toList();
 
         // when
-        transactions.forEach(mempool::add);
+        mempool.add(transactions);
 
         // then
         then(mempoolListener).should()
@@ -60,7 +61,7 @@ class MempoolTest {
         final var committedTransactions = transactions.subList(3, 12);
         final var committedBlock = proposalBlock(blockHeight(4), committedTransactions);
 
-        transactions.forEach(mempool::add);
+        mempool.add(transactions);
 
         // when
         mempool.onCommit(committedBlock);
@@ -71,5 +72,18 @@ class MempoolTest {
             .forEach(tx -> assertThat(mempool.contains(tx)).isTrue());
         committedTransactions
             .forEach(tx -> assertThat(mempool.contains(tx)).isFalse());
+    }
+
+    @Test
+    void should_save_new_unprocessed_transactions() {
+        // given
+        var transactions = aRandomTransactions(4);
+
+        // when
+        mempool.newUnprocessedTransactions(transactions);
+
+        // then
+        transactions.forEach(tx ->
+            assertThat(mempool.contains(tx)).isTrue());
     }
 }

@@ -9,6 +9,7 @@ import com.telnov.consensus.dbft.types.CommitMessage;
 import com.telnov.consensus.dbft.types.CoordinatorMessage;
 import com.telnov.consensus.dbft.types.EstimationMessage;
 import com.telnov.consensus.dbft.types.InitialEstimationMessage;
+import com.telnov.consensus.dbft.types.MempoolCoordinatorMessage;
 import com.telnov.consensus.dbft.types.Message;
 import com.telnov.consensus.dbft.types.MessageType;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
@@ -49,6 +50,7 @@ public final class MessageJson {
             case BINARY_COMMIT -> BinaryCommitMessage.class;
             case PROPOSE_VALUE -> ProposedMultiValueMessage.class;
             case COMMIT -> CommitMessage.class;
+            case MEMPOOL_COORDINATOR_TXS -> MempoolCoordinatorMessage.class;
         };
     }
 }

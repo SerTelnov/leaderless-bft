@@ -5,16 +5,19 @@ import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
 import com.telnov.consensus.dbft.errors.PublicKeyNotFound;
 import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.MempoolListener;
+import com.telnov.consensus.dbft.storage.UnprocessedTransactionsPublisher;
 import com.telnov.consensus.dbft.types.BlockHeight;
 import com.telnov.consensus.dbft.types.CommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.InitialEstimationMessage;
+import com.telnov.consensus.dbft.types.MempoolCoordinatorMessage;
 import com.telnov.consensus.dbft.types.Message;
 import com.telnov.consensus.dbft.types.ProposalBlock;
 import static com.telnov.consensus.dbft.types.ProposalBlock.proposalBlock;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import com.telnov.consensus.dbft.types.Transaction;
+import static java.util.Collections.emptySet;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import org.apache.logging.log4j.LogManager;
@@ -40,23 +43,33 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     private final Map<BlockHeight, Set<PublicKey>> commitMessagesAuthors = new ConcurrentHashMap<>();
 
     private final PublicKey peer;
+    private final PublicKey mempoolCoordinatorPK;
     private final Committee committee;
     private final BlockChain blockChain;
     private final ConsensusModuleFactory consensusModuleFactory;
+    private final UnprocessedTransactionsPublisher unprocessedTransactionsPublisher;
     private Future<?> clearingOnCommit;
 
     public PeerServer(PublicKey peer,
+                      PublicKey mempoolCoordinatorPK,
                       Committee committee,
                       BlockChain blockChain,
-                      ConsensusModuleFactory consensusModuleFactory) {
+                      ConsensusModuleFactory consensusModuleFactory, UnprocessedTransactionsPublisher unprocessedTransactionsPublisher) {
         this.peer = peer;
+        this.mempoolCoordinatorPK = mempoolCoordinatorPK;
         this.committee = committee;
         this.blockChain = blockChain;
         this.consensusModuleFactory = consensusModuleFactory;
+        this.unprocessedTransactionsPublisher = unprocessedTransactionsPublisher;
     }
 
     @Override
     public void handle(Message message) {
+        if (mempoolCoordinatorPK.equals(message.author())) {
+            handleMempoolCoordinatorMessage((MempoolCoordinatorMessage) message);
+            return;
+        }
+
         if (!committee.participants().contains(message.author())) {
             throw new PublicKeyNotFound("Unknown message author with public key '%s'", message.author());
         }
@@ -74,6 +87,10 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
                 .ifPresent(consensus -> consensus.handle(message));
             case COMMIT -> handleCommit((CommitMessage) message);
         }
+    }
+
+    private void handleMempoolCoordinatorMessage(MempoolCoordinatorMessage message) {
+        unprocessedTransactionsPublisher.publishNewUnprocessed(message.unprocessedTransactions);
     }
 
     private void handleProposeValues(ProposedMultiValueMessage message) {
@@ -95,7 +112,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     public void onCommit(ProposalBlock block) {
         clearingOnCommit = executorService.submit(() -> {
             while (true) {
-                final var authorsOnHeight = commitMessagesAuthors.get(block.height());
+                final var authorsOnHeight = commitMessagesAuthors.getOrDefault(block.height(), emptySet());
                 if (authorsOnHeight.size() >= committee.quorumThreshold()) {
                     break;
                 }

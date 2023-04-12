@@ -42,4 +42,18 @@ class BlockHeightTest {
         assertThat(blockHeight(9).increment())
             .isEqualTo(blockHeight(10));
     }
+
+    @SuppressWarnings("EqualsWithItself")
+    @Test
+    void should_implement_comparable() {
+        // given
+        var height7 = blockHeight(7);
+        var height9 = blockHeight(9);
+
+        // then
+        assertThat(height7.compareTo(height9)).isEqualTo(-1);
+        assertThat(height7.compareTo(height7)).isEqualTo(0);
+        assertThat(height9.compareTo(height9)).isEqualTo(0);
+        assertThat(height9.compareTo(height7)).isEqualTo(1);
+    }
 }

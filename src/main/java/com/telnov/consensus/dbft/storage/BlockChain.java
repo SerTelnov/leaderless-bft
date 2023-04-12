@@ -5,12 +5,12 @@ import com.telnov.consensus.dbft.types.BlockHeight;
 import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import com.telnov.consensus.dbft.types.ProposalBlock;
 
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BlockChain implements CommitListener {
 
-    private final Set<ProposalBlock> blocks = new CopyOnWriteArraySet<>();
+    private final List<ProposalBlock> blocks = new CopyOnWriteArrayList<>();
 
     @Override
     public void onCommit(ProposalBlock block) {
@@ -19,5 +19,15 @@ public class BlockChain implements CommitListener {
 
     public BlockHeight currentHeight() {
         return blockHeight(blocks.size());
+    }
+
+
+    public List<ProposalBlock> blocks() {
+        return List.copyOf(blocks);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("BlockChain:[%s]", currentHeight());
     }
 }

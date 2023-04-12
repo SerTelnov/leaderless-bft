@@ -7,5 +7,6 @@ public enum MessageType {
     COORD,
     BINARY_COMMIT,
     PROPOSE_VALUE,
-    COMMIT
+    COMMIT,
+    MEMPOOL_COORDINATOR_TXS
 }

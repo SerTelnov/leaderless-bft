@@ -6,12 +6,13 @@ import com.telnov.consensus.dbft.types.Transaction;
 import net.jcip.annotations.ThreadSafe;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingDeque;
 
 @ThreadSafe
-public class Mempool implements CommitListener {
+public class Mempool implements CommitListener, UnprocessedTransactionsListener {
 
     private final Collection<MempoolListener> listeners = new CopyOnWriteArrayList<>();
     private final BlockingDeque<Transaction> unprocessedTransactions = new LinkedBlockingDeque<>();
@@ -22,9 +23,8 @@ public class Mempool implements CommitListener {
         this.transactionsNumberForConsensus = transactionsNumberForConsensus;
     }
 
-    public void add(Transaction transaction) {
-        unprocessedTransactions.add(transaction);
-
+    public void add(List<Transaction> transactions) {
+        unprocessedTransactions.addAll(transactions);
         if (unprocessedTransactions.size() >= transactionsNumberForConsensus) {
             final var transactionsToPropose = unprocessedTransactions.stream()
                 .limit(transactionsNumberForConsensus)
@@ -51,5 +51,10 @@ public class Mempool implements CommitListener {
 
     public void subscribe(MempoolListener mempoolListener) {
         listeners.add(mempoolListener);
+    }
+
+    @Override
+    public void newUnprocessedTransactions(List<Transaction> transactions) {
+        add(transactions);
     }
 }

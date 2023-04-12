@@ -6,12 +6,14 @@ import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.network.NettyPeerServer;
 import com.telnov.consensus.dbft.network.PeerAddress;
 import com.telnov.consensus.dbft.storage.BlockChain;
+import com.telnov.consensus.dbft.storage.UnprocessedTransactionsPublisher;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.Committee.committee;
 import static com.telnov.consensus.dbft.types.PeerNumber.number;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 
+import java.util.Collection;
 import java.util.Map;
 
 public class FunctionalTestSetup {
@@ -56,8 +58,13 @@ public class FunctionalTestSetup {
     }
 
     public static PeerServer peerServerFor(PublicKey peer, BlockChain blockChain, ConsensusModuleFactory consensusModuleFactory) {
-        return new PeerServer(peer, committee, blockChain, consensusModuleFactory);
+        return new PeerServer(peer, aRandomPublicKey(), committee, blockChain, consensusModuleFactory, new UnprocessedTransactionsPublisher());
     }
+
+    public static PeerServer peerServerFor(PublicKey peer, PublicKey mempoolCoordinator, BlockChain blockChain, ConsensusModuleFactory consensusModuleFactory, UnprocessedTransactionsPublisher unprocessedTransactionsPublisher) {
+        return new PeerServer(peer, mempoolCoordinator, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
+    }
+
 
     public static void runServerFor(PublicKey peer, PeerServer peerServer) {
         new Thread(() -> {
@@ -78,5 +85,16 @@ public class FunctionalTestSetup {
                 throw new RuntimeException(e);
             }
         }).start();
+    }
+
+    public static void waitServersAreConnected(Collection<NettyBroadcastClient> values) {
+        while (true) {
+            final var allConnected = values
+                .stream()
+                .allMatch(NettyBroadcastClient::connected);
+
+            if (allConnected)
+                break;
+        }
     }
 }

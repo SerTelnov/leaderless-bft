@@ -9,12 +9,12 @@ import static com.telnov.consensus.dbft.FunctionalTestSetup.node2;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.node3;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.node4;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.peerMessageBroadcaster;
+import static com.telnov.consensus.dbft.FunctionalTestSetup.waitServersAreConnected;
 import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageBroadcaster;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.Mempool;
 import static com.telnov.consensus.dbft.tests.AssertionsWithRetry.assertWithRetry;
-import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +29,6 @@ import java.util.Map;
 
 public class ConsensusInNetworkTest {
 
-    private static final Map<PublicKey, PeerServer> peerServers = new HashMap<>();
     private static final Map<PublicKey, NettyBroadcastClient> networkClients = new HashMap<>();
 
     private static final CommitsMessageHandler commitsMessageHandler = new CommitsMessageHandler();
@@ -39,11 +38,7 @@ public class ConsensusInNetworkTest {
     @BeforeAll
     public static void setup() {
         runServerFor(node1, node2, node3, node4);
-        waitServersAreConnected();
-
-        // and mempool
-        peerServers.values()
-            .forEach(mempool::subscribe);
+        waitServersAreConnected(networkClients.values());
     }
 
     @AfterEach
@@ -61,7 +56,7 @@ public class ConsensusInNetworkTest {
         final var transactions = aRandomTransactions(15);
 
         // when
-        transactions.forEach(mempool::add);
+        mempool.add(transactions);
 
         // then
         assertWithRetry(Duration.ofSeconds(2), () -> {
@@ -72,8 +67,6 @@ public class ConsensusInNetworkTest {
                     assertThat(block.transactions())
                         .hasSize(transactions.size())
                         .containsAll(transactions);
-                    assertThat(block.height())
-                        .isEqualTo(blockHeight(1));
                 });
         });
     }
@@ -84,13 +77,13 @@ public class ConsensusInNetworkTest {
         final var transactions = aRandomTransactions(15);
 
         // when
-        transactions.forEach(mempool::add);
+        mempool.add(transactions);
 
         // then
         assertWithRetry(Duration.ofSeconds(2), () -> {
             final var proposalBlocks = commitsMessageHandler.commitBlockPerPeers.values();
             assertThat(proposalBlocks)
-                .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold());
+                .hasSizeGreaterThanOrEqualTo(committee.participants().size());
             assertThat(proposalBlocks)
                 .allSatisfy(block -> assertThat(block.transactions())
                     .hasSize(transactions.size())
@@ -110,13 +103,13 @@ public class ConsensusInNetworkTest {
         clearUp();
         final var transactionsNextBlock = aRandomTransactions(15);
 
-        transactionsNextBlock.forEach(mempool::add);
+        mempool.add(transactionsNextBlock);
 
         // then
         assertWithRetry(Duration.ofSeconds(2), () -> {
             final var proposalBlocks = commitsMessageHandler.commitBlockPerPeers.values();
             assertThat(proposalBlocks)
-                .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold());
+                .hasSizeGreaterThanOrEqualTo(committee.participants().size());
             assertThat(proposalBlocks)
                 .allSatisfy(block -> {
                     assertThat(block.transactions())
@@ -126,17 +119,6 @@ public class ConsensusInNetworkTest {
                         .isEqualTo(currentHeight.increment());
                 });
         });
-    }
-
-    private static void waitServersAreConnected() {
-        while (true) {
-            final var allConnected = networkClients.values()
-                .stream()
-                .allMatch(NettyBroadcastClient::connected);
-
-            if (allConnected)
-                break;
-        }
     }
 
     private static void runServerFor(PublicKey... nodes) {
@@ -159,8 +141,8 @@ public class ConsensusInNetworkTest {
 
         final var consensusModuleFactory = consensusModuleFactory(peerMessageBroadcaster, localClient);
         final var peerServer = FunctionalTestSetup.peerServerFor(peer, blockChain, consensusModuleFactory);
-        peerServers.put(peer, peerServer);
 
+        mempool.subscribe(peerServer);
         localClient.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(commitsMessageHandler);
