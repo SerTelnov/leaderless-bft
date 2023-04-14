@@ -14,6 +14,7 @@ import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageBroa
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.Mempool;
+import com.telnov.consensus.dbft.storage.PeerMempoolCoordinator;
 import static com.telnov.consensus.dbft.tests.AssertionsWithRetry.assertWithRetry;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
@@ -32,7 +33,7 @@ public class ConsensusInNetworkTest {
     private static final Map<PublicKey, NettyBroadcastClient> networkClients = new HashMap<>();
 
     private static final CommitsMessageHandler commitsMessageHandler = new CommitsMessageHandler();
-    private static final Mempool mempool = new Mempool(15);
+    private static final Mempool mempool = new Mempool();
     private static final Map<PublicKey, BlockChain> chains = new HashMap<>();
 
     @BeforeAll
@@ -47,7 +48,7 @@ public class ConsensusInNetworkTest {
 
         // and wait mempool clean
         assertWithRetry(Duration.ofSeconds(1), () ->
-            assertThat(mempool.isEmpty()).isTrue());
+            assertThat(mempool.unprocessedTransactions()).isEmpty());
     }
 
     @Test
@@ -142,18 +143,21 @@ public class ConsensusInNetworkTest {
         final var consensusModuleFactory = consensusModuleFactory(peerMessageBroadcaster, localClient);
         final var peerServer = FunctionalTestSetup.peerServerFor(peer, blockChain, consensusModuleFactory);
 
-        mempool.subscribe(peerServer);
+        final var peerMempoolCoordinator = new PeerMempoolCoordinator(15, mempool);
+        peerMempoolCoordinator.subscribe(peerServer);
+
         localClient.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(commitsMessageHandler);
 
-        final var localCommitNotifier = new LocalCommitNotifier(peer);
+        final var localCommitNotifier = new LocalCommitNotifier(committee, peer);
         peerMessageBroadcaster.subscribe(localCommitNotifier);
 
         localCommitNotifier.subscribe(peerServer);
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
+        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         FunctionalTestSetup.runServerFor(peer, peerServer);
     }

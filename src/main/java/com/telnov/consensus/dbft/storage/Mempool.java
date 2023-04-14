@@ -5,52 +5,53 @@ import com.telnov.consensus.dbft.types.ProposalBlock;
 import com.telnov.consensus.dbft.types.Transaction;
 import net.jcip.annotations.ThreadSafe;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @ThreadSafe
 public class Mempool implements CommitListener, UnprocessedTransactionsListener {
 
-    private final Collection<MempoolListener> listeners = new CopyOnWriteArrayList<>();
+    private final Lock transactionsLock = new ReentrantLock();
+
     private final BlockingDeque<Transaction> unprocessedTransactions = new LinkedBlockingDeque<>();
 
-    private final int transactionsNumberForConsensus;
-
-    public Mempool(int transactionsNumberForConsensus) {
-        this.transactionsNumberForConsensus = transactionsNumberForConsensus;
+    public Mempool() {
     }
 
     public void add(List<Transaction> transactions) {
-        unprocessedTransactions.addAll(transactions);
-        if (unprocessedTransactions.size() >= transactionsNumberForConsensus) {
-            final var transactionsToPropose = unprocessedTransactions.stream()
-                .limit(transactionsNumberForConsensus)
-                .toList();
+        transactionsLock.lock();
 
-            listeners.forEach(listener -> listener.proposalBlockIsReady(transactionsToPropose));
+        try {
+            unprocessedTransactions.addAll(transactions);
+        } finally {
+            transactionsLock.unlock();
+        }
+    }
+
+    public List<Transaction> unprocessedTransactions() {
+        transactionsLock.lock();
+
+        try {
+            return List.copyOf(unprocessedTransactions);
+        } finally {
+            transactionsLock.unlock();
         }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public void onCommit(ProposalBlock block) {
-        block.transactions()
-            .forEach(unprocessedTransactions::remove);
-    }
+        transactionsLock.lock();
 
-    public boolean contains(Transaction transaction) {
-        return unprocessedTransactions.contains(transaction);
-    }
-
-    public boolean isEmpty() {
-        return unprocessedTransactions.isEmpty();
-    }
-
-    public void subscribe(MempoolListener mempoolListener) {
-        listeners.add(mempoolListener);
+        try {
+            block.transactions()
+                .forEach(unprocessedTransactions::remove);
+        } finally {
+            transactionsLock.unlock();
+        }
     }
 
     @Override

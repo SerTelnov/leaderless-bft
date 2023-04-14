@@ -21,13 +21,12 @@ public class BlockChain implements CommitListener {
         return blockHeight(blocks.size());
     }
 
-
     public List<ProposalBlock> blocks() {
         return List.copyOf(blocks);
     }
 
     @Override
     public String toString() {
-        return String.format("BlockChain:[%s]", currentHeight());
+        return String.format("BlockChain:[%s,Blocks:%s]", currentHeight(), blocks());
     }
 }

@@ -98,8 +98,10 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
             cleanState();
         }
 
-        generateConsensusModulesIfAbsent().consensus()
-            .handle(message);
+        if (message.proposalBlock.height().equals(blockChain.currentHeight().increment())) {
+            generateConsensusModulesIfAbsent().consensus()
+                .handle(message);
+        }
     }
 
     private void handleCommit(CommitMessage message) {
@@ -130,7 +132,9 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     }
 
     @Override
-    public void proposalBlockIsReady(List<Transaction> transaction) {
+    public void proposalBlockIsReady(List<Transaction> transactions) {
+        LOG.debug("New transactions: {}", transactions);
+
         waitingCleanUpOnCommit();
 
         final var consensus = generateConsensusModulesIfAbsent().consensus();
@@ -138,7 +142,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
             .increment();
 
         executorService.submit(() ->
-            consensus.propose(proposalBlock(nextBlockHeight, transaction)));
+            consensus.propose(proposalBlock(nextBlockHeight, transactions)));
     }
 
     private void waitingCleanUpOnCommit() {

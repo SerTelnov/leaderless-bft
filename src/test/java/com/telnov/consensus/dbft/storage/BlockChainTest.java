@@ -36,6 +36,6 @@ class BlockChainTest {
         // then
         assertThat(blockChain)
             .asString()
-            .isEqualTo("BlockChain:[Height:0]");
+            .isEqualTo("BlockChain:[Height:0,Blocks:[]]");
     }
 }

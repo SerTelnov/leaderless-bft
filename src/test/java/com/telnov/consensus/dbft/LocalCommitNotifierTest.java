@@ -1,9 +1,14 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
+import com.telnov.consensus.dbft.LocalCommitNotifier.CommitNotificationFinishedListener;
+import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessageTestData.aRandomCommitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessageTestData.aRandomCommitMessageBy;
+import com.telnov.consensus.dbft.types.Committee;
+import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
+import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,13 +19,16 @@ import static org.mockito.Mockito.mock;
 class LocalCommitNotifierTest {
 
     private final PublicKey localPeer = aRandomPublicKey();
+    private final Committee committee = aRandomCommitteeWith(4, localPeer);
     private final CommitListener commitListener = mock(CommitListener.class);
+    private final CommitNotificationFinishedListener commitNotificationFinishedListener = mock(CommitNotificationFinishedListener.class);
 
-    private final LocalCommitNotifier localCommitNotifier = new LocalCommitNotifier(localPeer);
+    private final LocalCommitNotifier localCommitNotifier = new LocalCommitNotifier(committee, localPeer);
 
     @BeforeEach
     void setup() {
         localCommitNotifier.subscribe(commitListener);
+        localCommitNotifier.subscribe(commitNotificationFinishedListener);
     }
 
     @Test
@@ -34,6 +42,46 @@ class LocalCommitNotifierTest {
         // then
         then(commitListener).should()
             .onCommit(commitMessage.proposedBlock);
+        then(commitNotificationFinishedListener).should()
+            .notifiedAllAboutCommit();
+    }
+
+    @Test
+    void should_notify_all_listener_after_commit_quorum_on_height() {
+        // given
+        var proposalBlock = aRandomProposalBlock();
+
+        var commitMessages = committee.participantsExcept(localPeer)
+            .stream()
+            .map(publicKey -> commitMessage(publicKey, proposalBlock));
+
+        // when
+        commitMessages.forEach(localCommitNotifier::handle);
+
+        // then
+        then(commitListener).should()
+            .onCommit(proposalBlock);
+        then(commitNotificationFinishedListener).should()
+            .notifiedAllAboutCommit();
+    }
+
+    @Test
+    void should_notify_listeners_only_once() {
+        // given
+        var proposalBlock = aRandomProposalBlock();
+
+        var commitMessages = committee.participants()
+            .stream()
+            .map(publicKey -> commitMessage(publicKey, proposalBlock));
+
+        // when
+        commitMessages.forEach(localCommitNotifier::handle);
+
+        // then
+        then(commitListener).should()
+            .onCommit(proposalBlock);
+        then(commitNotificationFinishedListener).should()
+            .notifiedAllAboutCommit();
     }
 
     @Test
