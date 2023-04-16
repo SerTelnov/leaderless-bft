@@ -11,6 +11,7 @@ import static com.telnov.consensus.dbft.FunctionalTestSetup.node4;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.peerMessageBroadcaster;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.waitServersAreConnected;
 import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageBroadcaster;
+import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageHandler;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.Mempool;
@@ -159,6 +160,6 @@ public class ConsensusInNetworkTest {
         localCommitNotifier.subscribe(blockChain);
         localCommitNotifier.subscribe(peerMempoolCoordinator);
 
-        FunctionalTestSetup.runServerFor(peer, peerServer);
+        FunctionalTestSetup.runServerFor(peer, jsonMessageHandler(peerServer));
     }
 }

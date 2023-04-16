@@ -6,8 +6,7 @@ import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.UnprocessedTransactionsPublisher;
 import static com.telnov.consensus.dbft.tests.AssertionsWithRetry.assertWithRetry;
 import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
-import com.telnov.consensus.dbft.types.CommitMessage;
-import com.telnov.consensus.dbft.types.CommitMessageTestData;
+import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
@@ -26,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.inOrder;
@@ -52,7 +53,7 @@ class PeerServerTest {
     void setup() {
         given(blockChain.currentHeight())
             .willReturn(blockHeight(0));
-        given(consensusModuleFactory.generateConsensusModules(name))
+        given(consensusModuleFactory.generateConsensusModules(eq(name), any()))
             .willReturn(new ConsensusModule(consensus, binaryConsensus));
     }
 
@@ -80,7 +81,7 @@ class PeerServerTest {
 
         // then
         then(consensusModuleFactory).should()
-            .generateConsensusModules(name);
+            .generateConsensusModules(name, message.proposalBlock.height());
         then(consensus).should()
             .handle(message);
     }
@@ -88,22 +89,23 @@ class PeerServerTest {
     @Test
     void should_not_create_single_consensus_model_per_proposal_block() {
         // given
+        final var height = blockHeight(1);
         final var messages = committee.participantsExcept(name)
             .stream()
-            .map(peer -> proposedMultiValueMessage(peer, aRandomProposalBlockWith(blockHeight(1))));
+            .map(peer -> proposedMultiValueMessage(peer, aRandomProposalBlockWith(height)));
 
         // when
         messages.forEach(server::handle);
 
         // then
         then(consensusModuleFactory).should(times(1))
-            .generateConsensusModules(name);
+            .generateConsensusModules(name, height);
     }
 
     @Test
     void should_invoke_binary_consensus_on_initiate_estimate_message() {
         // given
-        final var initialEstimationMessage = initialEstimationMessage(name, estimation(1));
+        final var initialEstimationMessage = initialEstimationMessage(name, estimation(1), blockHeight(3));
 
         // when
         server.handle(initialEstimationMessage);
@@ -136,69 +138,26 @@ class PeerServerTest {
         server.proposalBlockIsReady(aRandomTransactions(10));
         assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
             .should(inOrder)
-            .generateConsensusModules(name));
+            .generateConsensusModules(name, blockHeight(1)));
 
         // given
         var proposalBlock = aRandomProposalBlockWith(blockHeight(1));
 
         committee.participantsExcept(name)
             .stream()
-            .map(peer -> CommitMessage.commitMessage(peer, aRandomProposalBlockWith(blockHeight(1))))
+            .map(peer -> commitMessage(peer, aRandomProposalBlockWith(blockHeight(1))))
             .forEach(server::handle);
 
         // when
+        given(blockChain.currentHeight())
+            .willReturn(blockHeight(1));
         server.onCommit(proposalBlock);
 
         // then
         server.proposalBlockIsReady(aRandomTransactions(10));
         assertWithRetry(Duration.ofMillis(20), () -> then(consensusModuleFactory)
             .should(inOrder)
-            .generateConsensusModules(name));
-    }
-
-    @Test
-    void should_not_clear_consensus_state_until_quorum_was_received() {
-        // setup
-        server.proposalBlockIsReady(aRandomTransactions(10));
-        assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
-            .should()
-            .generateConsensusModules(name));
-
-        // given
-        var proposalBlock = aRandomProposalBlockWith(blockHeight(1));
-
-        // when
-        server.onCommit(proposalBlock);
-
-        // then
-        server.handle(initialEstimationMessage(name, estimation(0)));
-        assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
-            .shouldHaveNoMoreInteractions());
-    }
-
-    @Test
-    void should_not_clear_consensus_state_until_quorum_was_received_for_current_height() {
-        // setup
-        server.proposalBlockIsReady(aRandomTransactions(10));
-        assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
-            .should()
-            .generateConsensusModules(name));
-
-        // given
-        var proposalBlock = aRandomProposalBlockWith(blockHeight(1));
-
-        committee.participantsExcept(name)
-            .stream()
-            .map(CommitMessageTestData::aRandomCommitMessageBy)
-            .forEach(server::handle);
-
-        // when
-        server.onCommit(proposalBlock);
-
-        // then
-        server.handle(initialEstimationMessage(name, estimation(0)));
-        assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
-            .shouldHaveNoMoreInteractions());
+            .generateConsensusModules(name, blockHeight(2)));
     }
 
     @Test
@@ -209,7 +168,7 @@ class PeerServerTest {
         server.proposalBlockIsReady(aRandomTransactions(10));
         assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
             .should(inOrder)
-            .generateConsensusModules(name));
+            .generateConsensusModules(name, blockHeight(1)));
 
         // given
         given(blockChain.currentHeight())
@@ -226,7 +185,7 @@ class PeerServerTest {
         // then
         assertWithRetry(Duration.ofMillis(10), () -> then(consensusModuleFactory)
             .should(inOrder)
-            .generateConsensusModules(name));
+            .generateConsensusModules(name, blockHeight(10)));
     }
 
     @Test
@@ -241,15 +200,5 @@ class PeerServerTest {
         // then
         then(unprocessedTransactionsPublisher).should()
             .publishNewUnprocessed(transactions);
-    }
-
-    @Test
-    void should_not_fail_on_commit_if_authors_of_commit_is_empty() {
-        // then
-        assertThatCode(() -> {
-            server.onCommit(aRandomProposalBlock());
-            server.proposalBlockIsReady(aRandomTransactions(1));
-        })
-            .doesNotThrowAnyException();
     }
 }

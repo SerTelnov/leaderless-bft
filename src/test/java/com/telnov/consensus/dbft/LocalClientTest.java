@@ -1,8 +1,8 @@
 package com.telnov.consensus.dbft;
 
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
-import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,18 +25,21 @@ class LocalClientTest {
 
     @Test
     void should_invoke_local_binary_consensus() {
+        // given
+        final var height = blockHeight(4);
+
         // when
-        client.invokeBinaryConsensus(peer, estimation(1));
+        client.invokeBinaryConsensus(peer, estimation(1), height);
 
         // then
         then(messageHandler).should()
-            .handle(initialEstimationMessage(peer, estimation(1)));
+            .handle(initialEstimationMessage(peer, estimation(1), height));
     }
 
     @Test
     void should_return_false_then_bin_consensus_not_invoked() {
         // then
-        assertThat(client.binaryConsensusInvoked(peer)).isFalse();
+        assertThat(client.binaryConsensusInvoked(peer, blockHeight(1))).isFalse();
     }
 
     @Test
@@ -45,31 +48,35 @@ class LocalClientTest {
         var remotePeer = aRandomPublicKey();
 
         // then
-        assertThat(client.binaryConsensusInvoked(remotePeer)).isTrue();
+        assertThat(client.binaryConsensusInvoked(remotePeer, blockHeight(3))).isTrue();
     }
 
     @Test
     void should_return_true_then_local_bin_consensus_invoked() {
         // when
-        client.invokeBinaryConsensus(peer, estimation(1));
+        client.invokeBinaryConsensus(peer, estimation(1), blockHeight(5));
 
         // then
-        assertThat(client.binaryConsensusInvoked(peer)).isTrue();
+        assertThat(client.binaryConsensusInvoked(peer, blockHeight(5))).isTrue();
+        assertThat(client.binaryConsensusInvoked(peer, blockHeight(6))).isFalse();
     }
 
     @Test
     void should_invoke_local_binary_consensus_only_once() {
+        // given
+        var height = blockHeight(3);
+
         // when
-        client.invokeBinaryConsensus(peer, estimation(1));
+        client.invokeBinaryConsensus(peer, estimation(1), height);
 
         // then
         then(messageHandler).should()
-            .handle(initialEstimationMessage(peer, estimation(1)));
+            .handle(initialEstimationMessage(peer, estimation(1), height));
 
         // when
-        client.invokeBinaryConsensus(peer, estimation(1));
-        client.invokeBinaryConsensus(peer, estimation(0));
-        client.invokeBinaryConsensus(peer, estimation(1));
+        client.invokeBinaryConsensus(peer, estimation(1), height);
+        client.invokeBinaryConsensus(peer, estimation(0), height);
+        client.invokeBinaryConsensus(peer, estimation(1), height);
 
         // then
         then(messageHandler).shouldHaveNoMoreInteractions();
@@ -81,26 +88,9 @@ class LocalClientTest {
         var remotePeer = aRandomPublicKey();
 
         // when
-        client.invokeBinaryConsensus(remotePeer, estimation(1));
+        client.invokeBinaryConsensus(remotePeer, estimation(1), blockHeight(4));
 
         // then
         then(messageHandler).shouldHaveZeroInteractions();
-    }
-
-    @Test
-    void should_clear_binary_consensus_invoked_on_commit() {
-        // setup
-        client.invokeBinaryConsensus(peer, estimation(1));
-
-        assertThat(client.binaryConsensusInvoked(peer)).isTrue();
-
-        // given
-        var proposalBlock = aRandomProposalBlock();
-
-        // when
-        client.onCommit(proposalBlock);
-
-        // then
-        assertThat(client.binaryConsensusInvoked(peer)).isFalse();
     }
 }

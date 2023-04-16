@@ -3,6 +3,7 @@ package com.telnov.consensus.dbft;
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessage.Builder.auxiliaryMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
+import com.telnov.consensus.dbft.types.BlockHeight;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.CoordinatorMessage;
 import static com.telnov.consensus.dbft.types.CoordinatorMessage.Builder.coordinatorMessage;
@@ -35,6 +36,7 @@ public class BinaryConsensus implements MessageHandler {
 
     private final Duration timerAugender;
 
+    private final BlockHeight consensusOnHeight;
     private final PublicKey name;
     private final MessageBroadcaster broadcaster;
     private final Committee committee;
@@ -47,11 +49,13 @@ public class BinaryConsensus implements MessageHandler {
 
     private final List<ConsensusDecision> consensusDecision = new ArrayList<>();
 
-    public BinaryConsensus(Duration timerAugender,
+    public BinaryConsensus(BlockHeight consensusOnHeight,
+                           Duration timerAugender,
                            PublicKey name,
                            Committee committee,
                            MessageBroadcaster broadcaster,
                            CoordinatorFinder coordinatorFinder) {
+        this.consensusOnHeight = consensusOnHeight;
         this.timerAugender = timerAugender;
         this.name = name;
         this.committee = committee;
@@ -94,7 +98,7 @@ public class BinaryConsensus implements MessageHandler {
         } while (!onTerminationState(round));
 
         final var decision = consensusDecision.get(0);
-        broadcaster.broadcast(binaryCommitMessage(name, decision.estimation));
+        broadcaster.broadcast(binaryCommitMessage(name, decision.estimation, consensusOnHeight));
     }
 
     private boolean onTerminationState(Round round) {
@@ -153,6 +157,7 @@ public class BinaryConsensus implements MessageHandler {
                 .author(name)
                 .round(round)
                 .imposeEstimation(firstReceivedEst)
+                .height(consensusOnHeight)
                 .build());
         }
 
@@ -216,6 +221,7 @@ public class BinaryConsensus implements MessageHandler {
             .author(name)
             .round(round)
             .estimation(estimation)
+            .height(consensusOnHeight)
             .build());
     }
 
@@ -231,6 +237,7 @@ public class BinaryConsensus implements MessageHandler {
             .author(name)
             .round(round)
             .estimations(auxiliary)
+            .height(consensusOnHeight)
             .build());
 
         return auxiliary;

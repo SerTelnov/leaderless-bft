@@ -10,27 +10,31 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 
-public class EstimationMessage implements Message {
+public class EstimationMessage implements ConsensusHelpfulMessage {
 
     public final PublicKey author;
     public final Round round;
     public final Estimation estimation;
+    public final BlockHeight height;
 
     @JsonCreator
     public EstimationMessage(@JsonProperty("author") PublicKey author,
                              @JsonProperty("round") Round round,
                              @JsonProperty("estimation") Estimation estimation,
+                             @JsonProperty("height") BlockHeight height,
                              @JsonProperty("type") MessageType type) {
         this(estimationMessage()
             .author(author)
             .round(round)
-            .estimation(estimation));
+            .estimation(estimation)
+            .height(height));
     }
 
     private EstimationMessage(Builder builder) {
         this.author = requireNonNull(builder.author);
         this.round = requireNonNull(builder.round);
         this.estimation = requireNonNull(builder.estimation);
+        this.height = requireNonNull(builder.height);
     }
 
     @Override
@@ -44,23 +48,26 @@ public class EstimationMessage implements Message {
     }
 
     @Override
+    public BlockHeight consensusForHeight() {
+        return height;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        EstimationMessage that = (EstimationMessage) o;
-        return Objects.equals(author, that.author) &&
-            Objects.equals(round, that.round) &&
-            Objects.equals(estimation, that.estimation);
+        final EstimationMessage that = (EstimationMessage) o;
+        return Objects.equals(author, that.author) && Objects.equals(round, that.round) && Objects.equals(estimation, that.estimation) && Objects.equals(height, that.height);
     }
 
     @Override
     public int hashCode() {
-        return hash(author, round, estimation);
+        return hash(author, round, estimation, height);
     }
 
     @Override
     public String toString() {
-        return format("EST:[Author:%s,%s,%s]", author, round, estimation);
+        return format("EST:[Author:%s,%s,%s,%s]", author.key(), round, estimation, height);
     }
 
     public static final class Builder {
@@ -68,6 +75,7 @@ public class EstimationMessage implements Message {
         private PublicKey author;
         private Round round;
         private Estimation estimation;
+        private BlockHeight height;
 
         public static Builder estimationMessage() {
             return new Builder();
@@ -85,6 +93,11 @@ public class EstimationMessage implements Message {
 
         public Builder estimation(Estimation estimation) {
             this.estimation = estimation;
+            return this;
+        }
+
+        public Builder height(BlockHeight height) {
+            this.height = height;
             return this;
         }
 

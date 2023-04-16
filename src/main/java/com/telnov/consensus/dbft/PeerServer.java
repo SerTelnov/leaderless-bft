@@ -9,12 +9,12 @@ import com.telnov.consensus.dbft.storage.UnprocessedTransactionsPublisher;
 import com.telnov.consensus.dbft.types.BlockHeight;
 import com.telnov.consensus.dbft.types.CommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
+import com.telnov.consensus.dbft.types.ConsensusHelpfulMessage;
 import com.telnov.consensus.dbft.types.InitialEstimationMessage;
 import com.telnov.consensus.dbft.types.MempoolCoordinatorMessage;
 import com.telnov.consensus.dbft.types.Message;
 import com.telnov.consensus.dbft.types.ProposalBlock;
 import static com.telnov.consensus.dbft.types.ProposalBlock.proposalBlock;
-import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import com.telnov.consensus.dbft.types.Transaction;
 import static java.util.Collections.emptySet;
@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,7 +38,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     private static final Logger LOG = LogManager.getLogger(PeerServer.class);
     private final ExecutorService executorService = newFixedThreadPool(2);
 
-    private final Map<Class<PeerServer>, ConsensusModule> activeConsensusModule = new ConcurrentHashMap<>();
+    private final Map<BlockHeight, ConsensusModule> consensusOnHeights = new ConcurrentHashMap<>();
     private final Map<BlockHeight, Set<PublicKey>> commitMessagesAuthors = new ConcurrentHashMap<>();
 
     private final PublicKey peer;
@@ -76,32 +75,11 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
 
         LOG.debug("Receive message {} from author[pk={}]", message, message.author());
 
-        switch (message.type()) {
-            case INIT_EST -> invokeBinaryConsensus((InitialEstimationMessage) message);
-            case EST, AUX, COORD -> activeConsensusModule()
-                .map(ConsensusModule::binaryConsensus)
-                .ifPresent(binaryConsensus -> binaryConsensus.handle(message));
-            case PROPOSE_VALUE -> handleProposeValues((ProposedMultiValueMessage) message);
-            case BINARY_COMMIT -> activeConsensusModule()
-                .map(ConsensusModule::consensus)
-                .ifPresent(consensus -> consensus.handle(message));
-            case COMMIT -> handleCommit((CommitMessage) message);
-        }
+        processingInProgressConsensusMessage((ConsensusHelpfulMessage) message);
     }
 
     private void handleMempoolCoordinatorMessage(MempoolCoordinatorMessage message) {
         unprocessedTransactionsPublisher.publishNewUnprocessed(message.unprocessedTransactions);
-    }
-
-    private void handleProposeValues(ProposedMultiValueMessage message) {
-        if (!message.proposalBlock.height().equals(blockChain.currentHeight().increment())) {
-            cleanState();
-        }
-
-        if (message.proposalBlock.height().equals(blockChain.currentHeight().increment())) {
-            generateConsensusModulesIfAbsent().consensus()
-                .handle(message);
-        }
     }
 
     private void handleCommit(CommitMessage message) {
@@ -121,12 +99,12 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
             }
 
             LOG.debug("Clear on commit");
-            cleanState();
         });
     }
 
-    private void invokeBinaryConsensus(InitialEstimationMessage message) {
-        final var binaryConsensus = generateConsensusModulesIfAbsent().binaryConsensus();
+    private void invokeBinaryConsensusOn(BlockHeight height, InitialEstimationMessage message) {
+        final var binaryConsensus = consensusModuleOn(height)
+            .binaryConsensus();
         executorService.submit(() ->
             binaryConsensus.propose(message.estimation));
     }
@@ -137,9 +115,9 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
 
         waitingCleanUpOnCommit();
 
-        final var consensus = generateConsensusModulesIfAbsent().consensus();
         final var nextBlockHeight = blockChain.currentHeight()
             .increment();
+        final var consensus = consensusModuleOn(nextBlockHeight).consensus();
 
         executorService.submit(() ->
             consensus.propose(proposalBlock(nextBlockHeight, transactions)));
@@ -157,20 +135,27 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
         }
     }
 
-    private Optional<ConsensusModule> activeConsensusModule() {
-        return Optional.ofNullable(activeConsensusModule.get(this.getClass()));
+    private void processingInProgressConsensusMessage(ConsensusHelpfulMessage message) {
+        final BlockHeight height = message.consensusForHeight();
+
+        switch (message.type()) {
+            case INIT_EST -> invokeBinaryConsensusOn(height, (InitialEstimationMessage) message);
+            case EST, AUX, COORD -> consensusModuleOn(height)
+                .binaryConsensus()
+                .handle(message);
+            case PROPOSE_VALUE, BINARY_COMMIT -> consensusModuleOn(height)
+                .consensus()
+                .handle(message);
+            case COMMIT -> handleCommit((CommitMessage) message);
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    private ConsensusModule generateConsensusModulesIfAbsent() {
-        activeConsensusModule.computeIfAbsent((Class<PeerServer>) this.getClass(), __ -> {
-            commitMessagesAuthors.clear();
-            return consensusModuleFactory.generateConsensusModules(peer);
-        });
-        return activeConsensusModule.get(this.getClass());
+    private ConsensusModule consensusModuleOn(BlockHeight height) {
+        consensusOnHeights.computeIfAbsent(height, __ ->
+            consensusModuleFactory.generateConsensusModules(peer, height));
+        return consensusOnHeights.get(height);
     }
 
     private void cleanState() {
-        activeConsensusModule.clear();
     }
 }

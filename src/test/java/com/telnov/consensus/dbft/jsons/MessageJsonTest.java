@@ -6,6 +6,7 @@ import static com.telnov.consensus.dbft.jsons.MessageJson.deserialize;
 import static com.telnov.consensus.dbft.jsons.ObjectMapperConfigure.objectMapper;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessageTestData.anAuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
@@ -40,11 +41,11 @@ class MessageJsonTest {
 
     static Stream<Message> messages() {
         return Stream.of(
-            initialEstimationMessage(aRandomPublicKey(), estimation(1)),
+            initialEstimationMessage(aRandomPublicKey(), estimation(1), blockHeight(4)),
             anEstimationMessage().build(),
             anAuxiliaryMessage().build(),
             aCoordinatorMessage().build(),
-            binaryCommitMessage(aRandomPublicKey(), estimation(1)),
+            binaryCommitMessage(aRandomPublicKey(), estimation(1), blockHeight(3)),
             aRandomProposedMultiValueMessage(),
             commitMessage(aRandomPublicKey(), aRandomProposalBlock()),
             mempoolCoordinatorMessage(aRandomPublicKey(), aRandomTransactions(10))

@@ -12,11 +12,13 @@ import static com.telnov.consensus.dbft.FunctionalTestSetup.peerMessageBroadcast
 import static com.telnov.consensus.dbft.FunctionalTestSetup.runBroadcastClientFor;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.waitServersAreConnected;
 import com.telnov.consensus.dbft.benchmark.CoordinatorBroadcastService;
+import com.telnov.consensus.dbft.benchmark.LoggerMessageHandler;
 import com.telnov.consensus.dbft.benchmark.MempoolCoordinator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator.Config;
 import com.telnov.consensus.dbft.benchmark.PublishBlockTimer;
 import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageBroadcaster;
+import com.telnov.consensus.dbft.jsons.JsonNetworkMessageHandler;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.Mempool;
@@ -42,7 +44,7 @@ import java.util.stream.Stream;
 
 public class ConsensusWithMempoolCoordinatorTxTest {
 
-    private static final Config MEMPOOL_GENERATOR_CONFIG = new Config(150, 15);
+    private static final Config MEMPOOL_GENERATOR_CONFIG = new Config(330, 15);
     private static final PublicKey coordinatorPublicKey = aRandomPublicKey();
 
     private static final Map<PublicKey, NettyBroadcastClient> networkClients = new HashMap<>();
@@ -78,7 +80,7 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         new PublishBlockTimer(coordinatorPublishTransactionsTimer, Duration.ofMillis(100), mempoolCoordinator);
 
         // then
-        assertWithRetry(Duration.ofSeconds(2), () -> assertThat(chains.values())
+        assertWithRetry(Duration.ofSeconds(5), () -> assertThat(chains.values())
             .allSatisfy(block -> {
                 assertThat(block.blocks())
                     .hasSize(MEMPOOL_GENERATOR_CONFIG.numberOfTransactions() / MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock())
@@ -110,10 +112,12 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         unprocessedTransactionsPublisher.subscribe(mempool);
 
         final var peerServer = FunctionalTestSetup.peerServerFor(peer, coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
+        final var loggerMessageHandler = new LoggerMessageHandler(peer, committee);
 
         peerMempoolCoordinator.subscribe(peerServer);
         localClient.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(peerServer);
+        peerMessageBroadcaster.subscribe(loggerMessageHandler);
 
         final var localCommitNotifier = new LocalCommitNotifier(committee, peer);
         peerMessageBroadcaster.subscribe(localCommitNotifier);
@@ -124,6 +128,10 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         localCommitNotifier.subscribe(blockChain);
         localCommitNotifier.subscribe(peerMempoolCoordinator);
 
-        FunctionalTestSetup.runServerFor(peer, peerServer);
+        final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
+        jsonNetworkMessageHandler.subscribe(peerServer);
+        jsonNetworkMessageHandler.subscribe(loggerMessageHandler);
+
+        FunctionalTestSetup.runServerFor(peer, jsonNetworkMessageHandler);
     }
 }

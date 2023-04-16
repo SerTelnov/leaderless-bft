@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft;
 
+import com.telnov.consensus.dbft.types.BlockHeight;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.PublicKey;
 
@@ -24,10 +25,10 @@ public class ConsensusModuleFactory {
         this.coordinatorFinder = coordinatorFinder;
     }
 
-    public ConsensusModule generateConsensusModules(PublicKey name) {
+    public ConsensusModule generateConsensusModules(PublicKey name, BlockHeight height) {
         return new ConsensusModule(
-            new Consensus(name, committee, broadcaster, client),
-            new BinaryConsensus(TIMER, name, committee, broadcaster, coordinatorFinder));
+            new Consensus(height, name, committee, broadcaster, client),
+            new BinaryConsensus(height, TIMER, name, committee, broadcaster, coordinatorFinder));
     }
 
     public record ConsensusModule(Consensus consensus, BinaryConsensus binaryConsensus) {

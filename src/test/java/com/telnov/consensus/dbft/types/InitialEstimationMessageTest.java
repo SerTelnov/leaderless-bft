@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft.types;
 
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.InitialEstimationMessage.initialEstimationMessage;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
@@ -13,14 +14,16 @@ class InitialEstimationMessageTest {
         // given
         final var author = aRandomPublicKey();
         final var estimation = estimation(1);
+        final var blockHeight = blockHeight(4);
 
         // when
-        var result = initialEstimationMessage(author, estimation);
+        var result = initialEstimationMessage(author, estimation, blockHeight);
 
         // then
         assertThat(result.author()).isEqualTo(author);
         assertThat(result.estimation).isEqualTo(estimation);
-        assertThat(result).isEqualTo(initialEstimationMessage(author, estimation));
+        assertThat(result.consensusForHeight()).isEqualTo(blockHeight);
+        assertThat(result).isEqualTo(initialEstimationMessage(author, estimation, blockHeight));
     }
 
     @Test
@@ -28,10 +31,11 @@ class InitialEstimationMessageTest {
         // given
         final var author = aRandomPublicKey();
         final var estimation = estimation(1);
+        final var height = blockHeight(4);
 
         // then
-        assertThat(initialEstimationMessage(author, estimation))
+        assertThat(initialEstimationMessage(author, estimation, height))
             .asString()
-            .isEqualTo("InitEst:[Author:%s,%s]", author, estimation);
+            .isEqualTo("InitEst:[Author:%s,%s,%s]", author, estimation, height);
     }
 }

@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft.types;
 
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessage.Builder.estimationMessage;
 import static com.telnov.consensus.dbft.types.Round.round;
@@ -19,6 +20,7 @@ public class EstimationMessageTestData {
         return estimationMessage()
             .author(new PublicKey(randomUUID()))
             .round(round)
-            .estimation(est);
+            .estimation(est)
+            .height(blockHeight(7));
     }
 }

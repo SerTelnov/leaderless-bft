@@ -1,7 +1,7 @@
 package com.telnov.consensus.dbft;
 
-import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageHandler;
 import com.telnov.consensus.dbft.network.CommitteeWithAddresses;
+import com.telnov.consensus.dbft.network.JsonHandler;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.network.NettyPeerServer;
 import com.telnov.consensus.dbft.network.PeerAddress;
@@ -31,7 +31,7 @@ public class FunctionalTestSetup {
         node4, number(3)
     ));
 
-    private static final int port = nextInt(1000, 10000);
+    private static final int port = 8000;
 
     public static final CommitteeWithAddresses committeeWithAddresses = new CommitteeWithAddresses(committee, Map.of(
         node1, new PeerAddress("localhost", port),
@@ -67,10 +67,10 @@ public class FunctionalTestSetup {
     }
 
 
-    public static void runServerFor(PublicKey peer, PeerServer peerServer) {
+    public static void runServerFor(PublicKey peer, JsonHandler jsonHandler) {
         new Thread(() -> {
             try {
-                new NettyPeerServer(jsonMessageHandler(peerServer))
+                new NettyPeerServer(jsonHandler)
                     .run(committeeWithAddresses.addressFor(peer));
             } catch (Exception e) {
                 throw new RuntimeException(e);

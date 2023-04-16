@@ -7,7 +7,7 @@ import static java.lang.String.format;
 
 import java.util.Objects;
 
-public class ProposedMultiValueMessage implements Message {
+public class ProposedMultiValueMessage implements ConsensusHelpfulMessage {
 
     public final PublicKey author;
     public final ProposalBlock proposalBlock;
@@ -36,6 +36,11 @@ public class ProposedMultiValueMessage implements Message {
     @Override
     public MessageType type() {
         return PROPOSE_VALUE;
+    }
+
+    @Override
+    public BlockHeight consensusForHeight() {
+        return proposalBlock.height();
     }
 
     @Override

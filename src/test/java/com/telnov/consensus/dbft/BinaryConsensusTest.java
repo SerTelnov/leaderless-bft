@@ -4,6 +4,8 @@ import com.telnov.consensus.dbft.tests.AssertionsWithRetry;
 import com.telnov.consensus.dbft.types.AuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.AuxiliaryMessageTestData.anAuxiliaryMessage;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
+import com.telnov.consensus.dbft.types.BlockHeight;
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee;
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
@@ -33,10 +35,12 @@ class BinaryConsensusTest {
     private final MessageBroadcaster broadcaster = mock(MessageBroadcaster.class);
     private final CoordinatorFinder coordinatorFinder = mock(CoordinatorFinder.class);
 
+    private final BlockHeight consensusOnHeight = blockHeight(7);
     private final PublicKey name = new PublicKey(randomUUID());
     private final Committee committee = aRandomCommittee(4);
 
     private final BinaryConsensus consensus = new BinaryConsensus(
+        consensusOnHeight,
         TEST_TIMER_AUGENDER,
         name,
         committee,
@@ -66,6 +70,7 @@ class BinaryConsensusTest {
                 .author(name)
                 .round(round1)
                 .estimation(est)
+                .height(consensusOnHeight)
                 .build()));
 
         // when send AUX
@@ -86,7 +91,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     @Test
@@ -223,7 +228,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     @Test
@@ -249,6 +254,7 @@ class BinaryConsensusTest {
                 .author(name)
                 .round(round1)
                 .estimation(est)
+                .height(consensusOnHeight)
                 .build()));
 
         // when send AUX
@@ -268,7 +274,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     @Test
@@ -345,7 +351,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     @Test
@@ -406,7 +412,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     @Test
@@ -458,7 +464,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     @Test
@@ -510,7 +516,7 @@ class BinaryConsensusTest {
         future.get(1, SECONDS);
 
         assertWithRetry(() -> then(broadcaster).should(inOrder)
-            .broadcast(binaryCommitMessage(name, est)));
+            .broadcast(binaryCommitMessage(name, est, consensusOnHeight)));
     }
 
     private static void assertWithRetry(Runnable runnable) {

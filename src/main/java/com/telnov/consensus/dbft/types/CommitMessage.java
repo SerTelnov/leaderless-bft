@@ -6,7 +6,7 @@ import static com.telnov.consensus.dbft.types.MessageType.COMMIT;
 
 import java.util.Objects;
 
-public class CommitMessage implements Message {
+public class CommitMessage implements ConsensusHelpfulMessage {
 
     public final PublicKey author;
     public final ProposalBlock proposedBlock;
@@ -39,11 +39,16 @@ public class CommitMessage implements Message {
     }
 
     @Override
+    public BlockHeight consensusForHeight() {
+        return proposedBlock.height();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommitMessage that = (CommitMessage) o;
-        return Objects.equals(author, that.author) && Objects.equals(proposedBlock, that.proposedBlock);
+        final CommitMessage message = (CommitMessage) o;
+        return Objects.equals(author, message.author) && Objects.equals(proposedBlock, message.proposedBlock);
     }
 
     @Override

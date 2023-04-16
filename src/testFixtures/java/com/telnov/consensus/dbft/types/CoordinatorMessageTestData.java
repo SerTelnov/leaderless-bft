@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft.types;
 
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import com.telnov.consensus.dbft.types.CoordinatorMessage.Builder;
 
 import static com.telnov.consensus.dbft.types.CoordinatorMessage.Builder.coordinatorMessage;
@@ -13,6 +14,7 @@ public class CoordinatorMessageTestData {
         return coordinatorMessage()
             .author(new PublicKey(randomUUID()))
             .round(round(3))
-            .imposeEstimation(estimation(1));
+            .imposeEstimation(estimation(1))
+            .height(blockHeight(7));
     }
 }

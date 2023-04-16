@@ -1,6 +1,7 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.BinaryCommitMessage;
+import com.telnov.consensus.dbft.types.BlockHeight;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.Estimation;
@@ -21,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @NotThreadSafe
 public class Consensus implements MessageHandler {
 
+    private final BlockHeight consensusOnHeight;
     private final PublicKey name;
     private final Committee committee;
     private final MessageBroadcaster broadcaster;
@@ -30,10 +32,12 @@ public class Consensus implements MessageHandler {
     private final Map<PublicKey, Estimation> binProposals = new ConcurrentHashMap<>();
     private final List<PublicKey> binProposalsReceivedOrder = new CopyOnWriteArrayList<>();
 
-    public Consensus(PublicKey name,
+    public Consensus(BlockHeight consensusOnHeight,
+                     PublicKey name,
                      Committee committee,
                      MessageBroadcaster broadcaster,
                      Client client) {
+        this.consensusOnHeight = consensusOnHeight;
         this.name = name;
         this.committee = committee;
         this.broadcaster = broadcaster;
@@ -46,14 +50,14 @@ public class Consensus implements MessageHandler {
         do {
             proposals.keySet()
                 .stream()
-                .filter(not(client::binaryConsensusInvoked))
-                .forEach(peer -> client.invokeBinaryConsensus(peer, estimation(1)));
+                .filter(not(p -> client.binaryConsensusInvoked(p, consensusOnHeight)))
+                .forEach(peer -> client.invokeBinaryConsensus(peer, estimation(1), consensusOnHeight));
         } while (!hasPositiveBinProposals());
 
         committee.participantsExcept(name)
             .stream()
-            .filter(not(client::binaryConsensusInvoked))
-            .forEach(peer -> client.invokeBinaryConsensus(peer, estimation(0)));
+            .filter(not(p -> client.binaryConsensusInvoked(p, consensusOnHeight)))
+            .forEach(peer -> client.invokeBinaryConsensus(peer, estimation(0), consensusOnHeight));
 
         while (true) if (binProposals.size() >= committee.quorumThreshold()) {
             break;

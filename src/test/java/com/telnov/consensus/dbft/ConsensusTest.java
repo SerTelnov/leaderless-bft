@@ -2,6 +2,8 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.tests.AssertionsWithRetry;
 import static com.telnov.consensus.dbft.types.BinaryCommitMessage.binaryCommitMessage;
+import com.telnov.consensus.dbft.types.BlockHeight;
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
@@ -31,13 +33,14 @@ class ConsensusTest {
 
     private final ExecutorService asyncConsensusRunnableService = Executors.newFixedThreadPool(1);
 
+    private final BlockHeight consensusOnHeight = blockHeight(12);
     private final MessageBroadcaster broadcaster = mock(MessageBroadcaster.class);
     private final Client client = mock(Client.class);
     private final PublicKey name = new PublicKey(randomUUID());
     private final Committee committee = spy(aRandomCommitteeWith(4, name));
     private final BinaryConsensus binaryConsensus = mock(BinaryConsensus.class);
 
-    private final Consensus consensus = new Consensus(name, committee, broadcaster, client);
+    private final Consensus consensus = new Consensus(consensusOnHeight, name, committee, broadcaster, client);
 
     @BeforeEach
     void setup() {
@@ -66,32 +69,32 @@ class ConsensusTest {
             .broadcast(proposedMultiValueMessage(name, proposedValue)));
 
         // when receive propose value
-        given(client.binaryConsensusInvoked(name))
+        given(client.binaryConsensusInvoked(name, consensusOnHeight))
             .willReturn(false);
 
         consensus.handle(proposedMultiValueMessage(name, proposedValue));
 
         // then
         assertWithRetry(() -> then(client).should(inOrder)
-            .invokeBinaryConsensus(name, estimation(1)));
+            .invokeBinaryConsensus(name, estimation(1), consensusOnHeight));
 
         // when
-        consensus.handle(binaryCommitMessage(name, estimation(1)));
+        consensus.handle(binaryCommitMessage(name, estimation(1), consensusOnHeight));
 
         // and BinCon wasn't involve for
         committee.participantsExcept(name)
-            .forEach(peer -> given(client.binaryConsensusInvoked(peer))
+            .forEach(peer -> given(client.binaryConsensusInvoked(peer, consensusOnHeight))
                 .willReturn(false));
 
         // then
         committee.participantsExcept(name)
             .forEach(peer -> assertWithRetry(() ->
                 then(client).should(inOrder)
-                    .invokeBinaryConsensus(peer, estimation(0))));
+                    .invokeBinaryConsensus(peer, estimation(0), consensusOnHeight)));
 
         // when wait bin consensus quorum
         committee.participantsExcept(name)
-            .forEach(peer -> consensus.handle(binaryCommitMessage(peer, estimation(1))));
+            .forEach(peer -> consensus.handle(binaryCommitMessage(peer, estimation(1), consensusOnHeight)));
 
         // and wait proposed value
         committee.participantsExcept(name)

@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft.types;
 
+import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessage.Builder.estimationMessage;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
@@ -17,17 +18,20 @@ class EstimationMessageTest {
         var publicKey = new PublicKey(randomUUID());
         var round = round(2);
         var estimation = estimation(1);
+        var height = blockHeight(4);
 
         // when
         var estimationMessage = estimationMessage()
             .author(publicKey)
             .round(round)
             .estimation(estimation)
+            .height(height)
             .build();
 
         // then
         assertThat(estimationMessage.round).isEqualTo(round);
         assertThat(estimationMessage.estimation).isEqualTo(estimation);
+        assertThat(estimationMessage.consensusForHeight()).isEqualTo(height);
         assertThat(estimationMessage.author()).isEqualTo(publicKey);
         assertThat(estimationMessage.type()).isEqualTo(EST);
     }
@@ -38,10 +42,11 @@ class EstimationMessageTest {
         var estMsg = anEstimationMessage()
             .round(round(3))
             .estimation(estimation(1))
+            .height(blockHeight(4))
             .build();
 
         // then
         assertThat(estMsg.toString())
-            .isEqualTo("EST:[Author:PublicKey[key=%s],Round:3,EST:1]", estMsg.author.key());
+            .isEqualTo("EST:[Author:%s,Round:3,EST:1,Height:4]", estMsg.author.key());
     }
 }
