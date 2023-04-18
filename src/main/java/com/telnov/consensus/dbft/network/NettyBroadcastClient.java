@@ -76,7 +76,7 @@ public class NettyBroadcastClient implements JsonBroadcaster {
 
     @Override
     public void broadcast(JsonNode json) {
-        validState(recipients.size() == addresses.size(), "Didn't connection for all servers yet");
+//        validState(recipients.size() == addresses.size(), "Didn't connection for all servers yet");
 
         final var future = recipients.writeAndFlush(buffer(json))
             .addListener((ChannelGroupFutureListener) futureListener -> {

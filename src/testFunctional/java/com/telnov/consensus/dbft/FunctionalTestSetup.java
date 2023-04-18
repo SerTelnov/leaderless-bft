@@ -1,6 +1,7 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.network.CommitteeWithAddresses;
+import static com.telnov.consensus.dbft.network.CommitteeWithAddresses.committeeWithAddresses;
 import com.telnov.consensus.dbft.network.JsonHandler;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.network.NettyPeerServer;
@@ -12,7 +13,6 @@ import static com.telnov.consensus.dbft.types.Committee.committee;
 import static com.telnov.consensus.dbft.types.PeerNumber.number;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
-import static org.apache.commons.lang3.RandomUtils.nextInt;
 
 import java.util.Collection;
 import java.util.Map;
@@ -33,7 +33,7 @@ public class FunctionalTestSetup {
 
     private static final int port = 8000;
 
-    public static final CommitteeWithAddresses committeeWithAddresses = new CommitteeWithAddresses(committee, Map.of(
+    public static final CommitteeWithAddresses committeeWithAddresses = committeeWithAddresses(committee, Map.of(
         node1, new PeerAddress("localhost", port),
         node2, new PeerAddress("localhost", port + 1),
         node3, new PeerAddress("localhost", port + 2),

@@ -1,6 +1,7 @@
 package com.telnov.consensus.dbft.types;
 
 import com.telnov.consensus.dbft.network.CommitteeWithAddresses;
+import static com.telnov.consensus.dbft.network.CommitteeWithAddresses.committeeWithAddresses;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.PeerAddressTestData.aRandomPeerAddress;
 import static java.util.stream.Collectors.toMap;
@@ -15,6 +16,6 @@ public class CommitteeWithAddressesTestData {
             .stream()
             .collect(toMap(Function.identity(), __ -> aRandomPeerAddress()));
 
-        return new CommitteeWithAddresses(committee, peerAddresses);
+        return committeeWithAddresses(committee, peerAddresses);
     }
 }

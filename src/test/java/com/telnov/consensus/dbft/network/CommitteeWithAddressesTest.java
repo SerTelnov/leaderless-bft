@@ -1,5 +1,6 @@
 package com.telnov.consensus.dbft.network;
 
+import static com.telnov.consensus.dbft.network.CommitteeWithAddresses.committeeWithAddresses;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee;
 import static com.telnov.consensus.dbft.types.CommitteeWithAddressesTestData.aRandomCommitteeWithAddresses;
 import static com.telnov.consensus.dbft.types.PeerAddressTestData.aRandomPeerAddress;
@@ -21,7 +22,7 @@ class CommitteeWithAddressesTest {
         final var addresses = Map.of(peer, address);
 
         // then
-        assertThatThrownBy(() -> new CommitteeWithAddresses(committee, addresses))
+        assertThatThrownBy(() -> committeeWithAddresses(committee, addresses))
             .isInstanceOf(IllegalStateException.class)
             .hasMessage("Addresses contains unknown public keys");
     }

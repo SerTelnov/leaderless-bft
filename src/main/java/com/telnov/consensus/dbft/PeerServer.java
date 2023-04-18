@@ -129,7 +129,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
                 clearingOnCommit.get(2, SECONDS);
             } catch (TimeoutException e) {
                 cleanState();
-            }catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         }

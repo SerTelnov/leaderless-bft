@@ -2,12 +2,16 @@ package com.telnov.consensus.dbft.benchmark;
 
 import static com.google.common.base.Suppliers.memoize;
 import com.telnov.consensus.dbft.types.Transaction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class MempoolCoordinator {
+
+    private static final Logger LOG = LogManager.getLogger(MempoolCoordinator.class);
 
     private final CoordinatorBroadcastService broadcastService;
     private final Supplier<Iterator<List<Transaction>>> genMempoolIterator;

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.unbroken-dome.test-sets' version '4.0.0'
     id 'java-test-fixtures'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 group 'com.telnov.consensus.bft.leaderless'
@@ -21,7 +22,10 @@ check.dependsOn testFunctional
 dependencies {
     compileOnly 'net.jcip:jcip-annotations:1.0'
 
+    implementation 'commons-cli:commons-cli:1.3.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
     implementation 'com.google.guava:guava:31.0.1-jre'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'org.apache.commons:commons-collections4:4.3'
@@ -44,4 +48,16 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+shadowJar {
+    archiveFileName = 'ConsensusApp.jar'
+
+    manifest {
+        attributes 'Main-Class': 'com.telnov.consensus.dbft.app.ConsensusApp'
+    }
+
+    from('src/main/resources') {
+        include 'log4j.xml'
+    }
 }
