@@ -3,6 +3,7 @@ package com.telnov.consensus.dbft.app;
 import com.telnov.consensus.dbft.Client;
 import com.telnov.consensus.dbft.ConsensusModuleFactory;
 import com.telnov.consensus.dbft.CoordinatorFinder;
+import com.telnov.consensus.dbft.FailedPeerServer;
 import com.telnov.consensus.dbft.LocalClient;
 import com.telnov.consensus.dbft.LocalCommitNotifier;
 import com.telnov.consensus.dbft.MessageBroadcaster;
@@ -34,7 +35,7 @@ public class PeerAppRunner extends AppRunner {
         this.committeeWithAddresses = config.committeeWithAddresses;
     }
 
-    public void run(PublicKey peer) throws Exception {
+    public void run(PublicKey peer, boolean failedPeer) throws Exception {
         final var networkBroadcastClient = networkBroadcastClientFor(peer);
 
         final var localClient = new LocalClient(peer);
@@ -48,7 +49,7 @@ public class PeerAppRunner extends AppRunner {
         final var unprocessedTransactionsPublisher = new UnprocessedTransactionsPublisher();
         unprocessedTransactionsPublisher.subscribe(mempool);
 
-        final var peerServer = peerServerFor(peer, appConfig.coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
+        final var peerServer = peerServerFor(failedPeer, peer, appConfig.coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
         final var loggerMessageHandler = new LoggerMessageHandler(peer, committee);
 
         peerMempoolCoordinator.subscribe(peerServer);
@@ -83,8 +84,10 @@ public class PeerAppRunner extends AppRunner {
         return new ConsensusModuleFactory(committee, messageBroadcaster, client, new CoordinatorFinder(committee));
     }
 
-    private PeerServer peerServerFor(PublicKey peer, PublicKey mempoolCoordinator, BlockChain blockChain, ConsensusModuleFactory consensusModuleFactory, UnprocessedTransactionsPublisher unprocessedTransactionsPublisher) {
-        return new PeerServer(peer, mempoolCoordinator, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
+    private PeerServer peerServerFor(boolean isFailedPeer, PublicKey peer, PublicKey mempoolCoordinator, BlockChain blockChain, ConsensusModuleFactory consensusModuleFactory, UnprocessedTransactionsPublisher unprocessedTransactionsPublisher) {
+        return isFailedPeer
+            ? new FailedPeerServer(peer, mempoolCoordinator, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher)
+            : new PeerServer(peer, mempoolCoordinator, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
     }
 
     private void runServerFor(PublicKey peer, JsonHandler jsonHandler) {

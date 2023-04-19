@@ -1,0 +1,27 @@
+---
+consensusStartThreshold: 20
+numberOfTransactionToGenerate: 40
+
+coordinatorPublicKey: 5e42d5c5-5d90-4f5d-b1c7-b83ec3d9c8d8
+
+peerConfigs:
+  - publicKey: e23b465d-36d1-414b-a8c2-2127b16e6d33
+    number: 0
+    address:
+      host: localhost
+      port: 8080
+  - publicKey: 27d0e422-6d27-4da4-8dcf-9790981b6fca
+    number: 1
+    address:
+      host: localhost
+      port: 8081
+  - publicKey: 9a7a8d60-61a7-478c-b6e7-6e1e6c089281
+    number: 2
+    address:
+      host: localhost
+      port: 8082
+  - publicKey: fe0d452c-87cc-47e6-8b0f-2859dfeefbd7
+    number: 3
+    address:
+      host: localhost
+      port: 8083

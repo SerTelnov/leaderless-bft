@@ -66,6 +66,9 @@ public class FunctionalTestSetup {
         return new PeerServer(peer, mempoolCoordinator, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
     }
 
+    public static FailedPeerServer failedPeerServer(PublicKey pk, PublicKey mempoolCoordinator, BlockChain blockChain, ConsensusModuleFactory consensusModuleFactory, UnprocessedTransactionsPublisher unprocessedTransactionsPublisher) {
+        return new FailedPeerServer(pk, mempoolCoordinator, committee, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
+    }
 
     public static void runServerFor(PublicKey peer, JsonHandler jsonHandler) {
         new Thread(() -> {
