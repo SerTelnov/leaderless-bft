@@ -1,7 +1,6 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
-import com.telnov.consensus.dbft.LocalCommitNotifier.CommitNotificationFinishedListener;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessageTestData.aRandomCommitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessageTestData.aRandomCommitMessageBy;
@@ -21,14 +20,12 @@ class LocalCommitNotifierTest {
     private final PublicKey localPeer = aRandomPublicKey();
     private final Committee committee = aRandomCommitteeWith(4, localPeer);
     private final CommitListener commitListener = mock(CommitListener.class);
-    private final CommitNotificationFinishedListener commitNotificationFinishedListener = mock(CommitNotificationFinishedListener.class);
 
     private final LocalCommitNotifier localCommitNotifier = new LocalCommitNotifier(committee, localPeer);
 
     @BeforeEach
     void setup() {
         localCommitNotifier.subscribe(commitListener);
-        localCommitNotifier.subscribe(commitNotificationFinishedListener);
     }
 
     @Test
@@ -42,8 +39,6 @@ class LocalCommitNotifierTest {
         // then
         then(commitListener).should()
             .onCommit(commitMessage.proposedBlock);
-        then(commitNotificationFinishedListener).should()
-            .notifiedAllAboutCommit();
     }
 
     @Test
@@ -61,8 +56,6 @@ class LocalCommitNotifierTest {
         // then
         then(commitListener).should()
             .onCommit(proposalBlock);
-        then(commitNotificationFinishedListener).should()
-            .notifiedAllAboutCommit();
     }
 
     @Test
@@ -80,8 +73,6 @@ class LocalCommitNotifierTest {
         // then
         then(commitListener).should()
             .onCommit(proposalBlock);
-        then(commitNotificationFinishedListener).should()
-            .notifiedAllAboutCommit();
     }
 
     @Test

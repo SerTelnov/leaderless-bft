@@ -25,7 +25,6 @@ public class LocalCommitNotifier implements MessageHandler {
     private final Committee committee;
 
     private final List<CommitListener> commitListeners = new CopyOnWriteArrayList<>();
-    private final List<CommitNotificationFinishedListener> commitNotificationFinishedListeners = new CopyOnWriteArrayList<>();
     private final PublicKey localPeer;
 
     private final Map<BlockHeight, Collection<PublicKey>> quorumOnHeight = new ConcurrentHashMap<>();
@@ -54,8 +53,6 @@ public class LocalCommitNotifier implements MessageHandler {
 
             commitListeners.forEach(listener ->
                 listener.onCommit(commitMessage.proposedBlock));
-            commitNotificationFinishedListeners
-                .forEach(CommitNotificationFinishedListener::notifiedAllAboutCommit);
         } finally {
             lock.unlock();
         }
@@ -74,17 +71,8 @@ public class LocalCommitNotifier implements MessageHandler {
         commitListeners.add(commitListener);
     }
 
-    public void subscribe(CommitNotificationFinishedListener commitNotificationFinishedListener) {
-        commitNotificationFinishedListeners.add(commitNotificationFinishedListener);
-    }
-
     public interface CommitListener {
 
         void onCommit(ProposalBlock block);
-    }
-
-    public interface CommitNotificationFinishedListener {
-
-        void notifiedAllAboutCommit();
     }
 }

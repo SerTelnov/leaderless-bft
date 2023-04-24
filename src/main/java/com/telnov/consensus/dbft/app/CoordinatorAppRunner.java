@@ -29,6 +29,6 @@ public class CoordinatorAppRunner extends AppRunner {
         waitServersAreConnected(appConfig.committeeWithAddresses.addresses());
 
         runBroadcastClientFor(networkClient);
-        new PublishBlockTimer(new Timer(), Duration.ofMillis(100), mempoolCoordinator);
+        new PublishBlockTimer(new Timer(), Duration.ofMillis(20), mempoolCoordinator);
     }
 }

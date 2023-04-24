@@ -145,6 +145,8 @@ public class ConsensusInNetworkTest {
         final var peerServer = FunctionalTestSetup.peerServerFor(peer, blockChain, consensusModuleFactory);
 
         final var peerMempoolCoordinator = new PeerMempoolCoordinator(15, mempool);
+
+        peerServer.subscribe(peerMempoolCoordinator);
         peerMempoolCoordinator.subscribe(peerServer);
 
         localClient.subscribe(peerServer);
@@ -158,7 +160,6 @@ public class ConsensusInNetworkTest {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
-        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         FunctionalTestSetup.runServerFor(peer, jsonMessageHandler(peerServer));
     }

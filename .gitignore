@@ -5,4 +5,10 @@ build
 out
 
 # Logs
-/logs
+logs
+
+
+# Gen out
+*.jar
+.*.json
+.*.yaml

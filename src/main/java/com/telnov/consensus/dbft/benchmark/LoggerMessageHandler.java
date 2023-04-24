@@ -2,8 +2,10 @@ package com.telnov.consensus.dbft.benchmark;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.telnov.consensus.dbft.MessageHandler;
+import com.telnov.consensus.dbft.types.CommitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.Message;
+import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.lang.String.format;
 import org.apache.logging.log4j.LogManager;
@@ -13,29 +15,32 @@ public class LoggerMessageHandler implements MessageHandler {
 
     private static final Logger LOG = LogManager.getLogger(LoggerMessageHandler.class);
 
-    public final PublicKey publicKey;
     public final Committee committee;
 
-    public LoggerMessageHandler(PublicKey publicKey, Committee committee) {
-        this.publicKey = publicKey;
+    public LoggerMessageHandler(Committee committee) {
         this.committee = committee;
     }
 
     @Override
     public void handle(Message message) {
-        logDebug(format("Peer[%s] received from [%s] message:'%s'",
-            peerName(publicKey), peerName(message.author()), message));
-        logInfo(format("Peer[%s] received message %s from [%s]",
-            peerName(publicKey), message.type(), peerName(message.author())));
+        switch (message.type()) {
+            case PROPOSE_VALUE -> handleProposeValue((ProposedMultiValueMessage) message);
+            case COMMIT -> handleCommit((CommitMessage) message);
+        }
+    }
+
+    private void handleProposeValue(ProposedMultiValueMessage message) {
+        log(format("PROPOSE_BLOCK [%s] hash=%s",
+            peerName(message.author), message.proposalBlock.hashCode()));
+    }
+
+    private void handleCommit(CommitMessage message) {
+        log(format("COMMIT [%s] hash=%s",
+            peerName(message.author), message.proposedBlock.hashCode()));
     }
 
     @VisibleForTesting
-    void logDebug(String s) {
-        LOG.debug(s);
-    }
-
-    @VisibleForTesting
-    void logInfo(String s) {
+    void log(String s) {
         LOG.info(s);
     }
 

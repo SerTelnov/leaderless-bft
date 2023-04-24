@@ -40,7 +40,7 @@ class MempoolGeneratorTest {
         // then
         assertThatThrownBy(() -> new Config(-1, 2))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("The value -1 is not in the specified inclusive range of 10 to 100000");
+            .hasMessage("The value -1 is not in the specified inclusive range of 10 to 500000");
         assertThatThrownBy(() -> new Config(10, -1))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("The value -1 is not in the specified inclusive range of 1 to 100");

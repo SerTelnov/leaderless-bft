@@ -112,7 +112,10 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         unprocessedTransactionsPublisher.subscribe(mempool);
 
         final var peerServer = FunctionalTestSetup.peerServerFor(peer, coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
-        final var loggerMessageHandler = new LoggerMessageHandler(peer, committee);
+
+        peerServer.subscribe(peerMempoolCoordinator);
+
+        final var loggerMessageHandler = new LoggerMessageHandler(committee);
 
         peerMempoolCoordinator.subscribe(peerServer);
         localClient.subscribe(peerServer);
@@ -126,7 +129,6 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
-        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
         jsonNetworkMessageHandler.subscribe(peerServer);

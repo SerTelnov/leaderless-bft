@@ -129,7 +129,9 @@ public class ConsensusWithFailNodeTest {
             ? FunctionalTestSetup.failedPeerServer(peer, coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher)
             : FunctionalTestSetup.peerServerFor(peer, coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
 
-        final var loggerMessageHandler = new LoggerMessageHandler(peer, committee);
+        peerServer.subscribe(peerMempoolCoordinator);
+
+        final var loggerMessageHandler = new LoggerMessageHandler(committee);
 
         peerMempoolCoordinator.subscribe(peerServer);
         localClient.subscribe(peerServer);
@@ -143,7 +145,6 @@ public class ConsensusWithFailNodeTest {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
-        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
         jsonNetworkMessageHandler.subscribe(peerServer);

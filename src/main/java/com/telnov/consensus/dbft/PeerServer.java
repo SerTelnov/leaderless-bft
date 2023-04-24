@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +38,8 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
 
     private static final Logger LOG = LogManager.getLogger(PeerServer.class);
     private final ExecutorService executorService = newFixedThreadPool(2);
+
+    private final List<CleanUpAfterCommitFinishedListener> commitFinishedListeners = new CopyOnWriteArrayList<>();
 
     private final Map<BlockHeight, ConsensusModule> consensusOnHeights = new ConcurrentHashMap<>();
     private final Map<BlockHeight, Set<PublicKey>> commitMessagesAuthors = new ConcurrentHashMap<>();
@@ -98,7 +101,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
                 }
             }
 
-            LOG.debug("Clear on commit");
+            cleanState();
         });
     }
 
@@ -157,5 +160,16 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     }
 
     private void cleanState() {
+        LOG.debug("Clear on commit");
+        commitFinishedListeners.forEach(CleanUpAfterCommitFinishedListener::commitFinished);
+    }
+
+    public void subscribe(CleanUpAfterCommitFinishedListener listener) {
+        commitFinishedListeners.add(listener);
+    }
+
+    public interface CleanUpAfterCommitFinishedListener {
+
+        void commitFinished();
     }
 }

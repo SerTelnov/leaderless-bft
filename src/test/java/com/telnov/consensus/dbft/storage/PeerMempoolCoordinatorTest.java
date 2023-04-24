@@ -59,7 +59,7 @@ class PeerMempoolCoordinatorTest {
             .willReturn(transactions.subList(4, 5));
 
         // when
-        peerMempoolCoordinator.notifiedAllAboutCommit();
+        peerMempoolCoordinator.commitFinished();
 
         // then
         assertWithRetry(Duration.ofMillis(10), () -> assertThat(peerMempoolCoordinator.state())

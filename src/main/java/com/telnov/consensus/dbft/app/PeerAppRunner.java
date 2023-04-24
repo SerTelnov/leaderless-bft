@@ -44,13 +44,15 @@ public class PeerAppRunner extends AppRunner {
         final var peerMempoolCoordinator = new PeerMempoolCoordinator(appConfig.consensusStartThreshold, mempool);
 
         final var peerMessageBroadcaster = new PeerMessageBroadcaster(jsonMessageBroadcaster(networkBroadcastClient));
+        final var loggerMessageHandler = new LoggerMessageHandler(committee);
 
         final var consensusModuleFactory = consensusModuleFactory(peerMessageBroadcaster, localClient);
         final var unprocessedTransactionsPublisher = new UnprocessedTransactionsPublisher();
         unprocessedTransactionsPublisher.subscribe(mempool);
 
         final var peerServer = peerServerFor(failedPeer, peer, appConfig.coordinatorPublicKey, blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
-        final var loggerMessageHandler = new LoggerMessageHandler(peer, committee);
+
+        peerServer.subscribe(peerMempoolCoordinator);
 
         peerMempoolCoordinator.subscribe(peerServer);
         localClient.subscribe(peerServer);
@@ -64,11 +66,9 @@ public class PeerAppRunner extends AppRunner {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
-        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
         jsonNetworkMessageHandler.subscribe(peerServer);
-        jsonNetworkMessageHandler.subscribe(loggerMessageHandler);
 
         runServerFor(peer, jsonNetworkMessageHandler);
         waitServersAreConnected(committeeWithAddresses.addressesExcept(peer));

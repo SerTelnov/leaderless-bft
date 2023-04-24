@@ -1,7 +1,7 @@
 package com.telnov.consensus.dbft.storage;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.telnov.consensus.dbft.LocalCommitNotifier.CommitNotificationFinishedListener;
+import com.telnov.consensus.dbft.PeerServer;
 import static com.telnov.consensus.dbft.storage.PeerMempoolCoordinator.State.IN_CONSENSUS;
 import static com.telnov.consensus.dbft.storage.PeerMempoolCoordinator.State.WAITING_TRANSACTIONS;
 import com.telnov.consensus.dbft.types.Transaction;
@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PeerMempoolCoordinator implements CommitNotificationFinishedListener {
+public class PeerMempoolCoordinator implements PeerServer.CleanUpAfterCommitFinishedListener {
 
     private final ExecutorService executor = newSingleThreadExecutor();
 
@@ -61,7 +61,7 @@ public class PeerMempoolCoordinator implements CommitNotificationFinishedListene
     }
 
     @Override
-    public void notifiedAllAboutCommit() {
+    public void commitFinished() {
         while (true) {
             if (state.compareAndSet(IN_CONSENSUS, WAITING_TRANSACTIONS)) {
                 break;
