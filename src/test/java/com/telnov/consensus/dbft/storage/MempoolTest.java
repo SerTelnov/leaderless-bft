@@ -2,6 +2,7 @@ package com.telnov.consensus.dbft.storage;
 
 import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import static com.telnov.consensus.dbft.types.ProposalBlock.proposalBlock;
+import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransaction;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +12,7 @@ import java.util.List;
 
 class MempoolTest {
 
-    private final Mempool mempool = new Mempool();
+    private final Mempool mempool = new Mempool(aRandomPublicKey());
 
     @Test
     void should_add_transaction_to_mempool() {

@@ -30,13 +30,13 @@ public class LoggerMessageHandler implements MessageHandler {
     }
 
     private void handleProposeValue(ProposedMultiValueMessage message) {
-        log(format("PROPOSE_BLOCK [%s] hash=%s",
-            peerName(message.author), message.proposalBlock.hashCode()));
+        log(format("PROPOSE_BLOCK [%s] on %s hash=%s",
+            peerName(message.author), message.proposalBlock.height(), message.proposalBlock.hashCode()));
     }
 
     private void handleCommit(CommitMessage message) {
-        log(format("COMMIT [%s] hash=%s",
-            peerName(message.author), message.proposedBlock.hashCode()));
+        log(format("COMMIT [%s] on %s hash=%s",
+            peerName(message.author), message.proposedBlock.height(), message.proposedBlock.hashCode()));
     }
 
     @VisibleForTesting

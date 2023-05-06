@@ -18,6 +18,7 @@ import static com.telnov.consensus.dbft.types.ProposalBlock.proposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
 import com.telnov.consensus.dbft.types.Transaction;
 import static java.util.Collections.emptySet;
+import static java.util.Comparator.comparing;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import org.apache.logging.log4j.LogManager;
@@ -164,6 +165,18 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
 
     private void cleanState() {
         LOG.debug("Peer {} clear states on commit", peer.key());
+
+        consensusOnHeights.keySet()
+            .stream()
+            .max(comparing(BlockHeight::value))
+            .map(currentCommittedHeight -> currentCommittedHeight.value() - 10)
+            .filter(value -> value > 0)
+            .map(BlockHeight::blockHeight)
+            .ifPresent(clearHeight -> {
+                consensusOnHeights.remove(clearHeight);
+                commitMessagesAuthors.remove(clearHeight);
+            });
+
         commitFinishedListeners.forEach(CleanUpAfterCommitFinishedListener::commitFinished);
     }
 

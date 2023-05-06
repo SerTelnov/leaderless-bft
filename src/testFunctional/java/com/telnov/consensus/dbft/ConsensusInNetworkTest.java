@@ -19,6 +19,7 @@ import com.telnov.consensus.dbft.storage.Mempool;
 import com.telnov.consensus.dbft.storage.PeerMempoolCoordinator;
 import static com.telnov.consensus.dbft.tests.AssertionsWithRetry.assertWithRetry;
 import com.telnov.consensus.dbft.types.PublicKey;
+import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.AfterEach;
@@ -35,7 +36,7 @@ public class ConsensusInNetworkTest {
     private static final Map<PublicKey, NettyBroadcastClient> networkClients = new HashMap<>();
 
     private static final CommitMessageHandler commitMessageHandler = new CommitMessageHandler();
-    private static final Mempool mempool = new Mempool();
+    private static final Mempool mempool = new Mempool(aRandomPublicKey());
     private static final Map<PublicKey, BlockChain> chains = new HashMap<>();
 
     @BeforeAll

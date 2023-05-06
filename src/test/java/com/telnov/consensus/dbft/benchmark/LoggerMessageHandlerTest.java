@@ -33,7 +33,7 @@ class LoggerMessageHandlerTest {
 
         // then
         then(loggerMessageHandler).should()
-            .log(format("COMMIT [pk=%s,n=2] hash=%s",
-                author.key(), commitMessage.proposedBlock.hashCode()));
+            .log(format("COMMIT [pk=%s,n=2] on %s hash=%s",
+                author.key(), commitMessage.proposedBlock.height(), commitMessage.proposedBlock.hashCode()));
     }
 }

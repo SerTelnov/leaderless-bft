@@ -49,7 +49,7 @@ class LocalCommitNotifierTest {
     }
 
     @Test
-    void should_notify_all_listener_after_commit_quorum_on_height() {
+    void should_notify_all_listener_only_after_local_peer_commit() {
         // given
         var proposalBlock = aRandomProposalBlock();
 
@@ -61,11 +61,8 @@ class LocalCommitNotifierTest {
         commitMessages.forEach(localCommitNotifier::handle);
 
         // then
-        var inOrder = inOrder(commitListener, commitNotificationFinished);
-        then(commitListener).should(inOrder)
-            .onCommit(proposalBlock);
-        then(commitNotificationFinished).should(inOrder)
-            .onCommitNotificationFinished(proposalBlock.height());
+        then(commitListener).shouldHaveZeroInteractions();
+        then(commitNotificationFinished).shouldHaveZeroInteractions();
     }
 
     @Test
@@ -83,6 +80,13 @@ class LocalCommitNotifierTest {
         // then
         then(commitListener).should()
             .onCommit(proposalBlock);
+
+        var inOrder = inOrder(commitListener, commitNotificationFinished);
+        then(commitListener).should(inOrder)
+            .onCommit(proposalBlock);
+        then(commitNotificationFinished).should(inOrder)
+            .onCommitNotificationFinished(proposalBlock.height());
+
     }
 
     @Test

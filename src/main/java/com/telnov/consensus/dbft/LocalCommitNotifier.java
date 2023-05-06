@@ -7,6 +7,8 @@ import com.telnov.consensus.dbft.types.Message;
 import com.telnov.consensus.dbft.types.MessageType;
 import com.telnov.consensus.dbft.types.ProposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,18 +17,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class LocalCommitNotifier implements MessageHandler {
 
-    private final Lock lock = new ReentrantLock();
+    private static final Logger LOG = LogManager.getLogger(LocalCommitNotifier.class);
 
     private final Committee committee;
+    private final PublicKey localPeer;
 
     private final List<CommitListener> commitListeners = new CopyOnWriteArrayList<>();
     private final List<CommitNotificationFinished> commitNotificationFinishedListeners = new CopyOnWriteArrayList<>();
-    private final PublicKey localPeer;
 
     private final Map<BlockHeight, Collection<PublicKey>> quorumOnHeight = new ConcurrentHashMap<>();
     private final Set<BlockHeight> notifiedOnHeights = new CopyOnWriteArraySet<>();
@@ -41,24 +41,22 @@ public class LocalCommitNotifier implements MessageHandler {
         if (message.type() != MessageType.COMMIT)
             return;
 
-        lock.lock();
+        final var commitMessage = (CommitMessage) message;
 
-        try {
-            final var commitMessage = (CommitMessage) message;
-            if (!message.author().equals(localPeer) && !isCommitQuorum(commitMessage))
-                return;
-
-            if (notifiedOnHeights.contains(commitMessage.proposedBlock.height()))
-                return;
-            notifiedOnHeights.add(commitMessage.proposedBlock.height());
-
-            commitListeners.forEach(listener ->
-                listener.onCommit(commitMessage.proposedBlock));
-            commitNotificationFinishedListeners.forEach(listner ->
-                listner.onCommitNotificationFinished(commitMessage.proposedBlock.height()));
-        } finally {
-            lock.unlock();
+        if (!message.author().equals(localPeer)) {
+            return;
         }
+
+        if (notifiedOnHeights.contains(commitMessage.proposedBlock.height()))
+            return;
+        notifiedOnHeights.add(commitMessage.proposedBlock.height());
+
+        LOG.debug("Peer {} notify listeners about quorum commit on {}", localPeer.key(), commitMessage.proposedBlock.height());
+        commitListeners.forEach(listener ->
+            listener.onCommit(commitMessage.proposedBlock));
+        LOG.debug("Peer {} notified all listeners about quorum commit on {}", localPeer.key(), commitMessage.proposedBlock.height());
+        commitNotificationFinishedListeners.forEach(listener ->
+            listener.onCommitNotificationFinished(commitMessage.proposedBlock.height()));
     }
 
     private boolean isCommitQuorum(CommitMessage message) {

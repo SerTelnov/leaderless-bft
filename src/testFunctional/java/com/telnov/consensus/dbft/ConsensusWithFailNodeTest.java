@@ -115,7 +115,7 @@ public class ConsensusWithFailNodeTest {
 
         final var localClient = localClientFor(peer);
         final var blockChain = new BlockChain();
-        final var mempool = new Mempool();
+        final var mempool = new Mempool(peer);
         final var peerMempoolCoordinator = new PeerMempoolCoordinator(peer, MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock(), mempool);
         chains.put(peer, blockChain);
 

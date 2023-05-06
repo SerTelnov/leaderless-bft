@@ -13,6 +13,7 @@ import static com.telnov.consensus.dbft.types.BlockHeight.blockHeight;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee;
 import static com.telnov.consensus.dbft.types.MempoolCoordinatorMessage.mempoolCoordinatorMessage;
+import com.telnov.consensus.dbft.types.ProposalBlock;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
 public class ConsensusTest {
 
     public static final int TRANSACTIONS_FOR_CONSENSUS = 5;
-    private final Committee committee = aRandomCommittee(9);
+    private final Committee committee = aRandomCommittee(10);
     private final CoordinatorFinder coordinatorFinder = new CoordinatorFinder(committee);
     private final PublicKey mempoolCoordinatorPk = aRandomPublicKey();
     private final SimpleMessageBroadcaster messageBroadcaster = new SimpleMessageBroadcaster();
@@ -59,7 +60,7 @@ public class ConsensusTest {
             .toList();
 
         var genTransactions = Stream.generate(() -> aRandomTransactions(25))
-            .limit(100)
+            .limit(120)
             .toList();
 
         // when
@@ -74,33 +75,35 @@ public class ConsensusTest {
 
         final var expectedCommitNumber = allTransactions.size() / TRANSACTIONS_FOR_CONSENSUS;
 
-        try {
+        assertWithSnapshotPublish(() -> {
             assertWithRetry(Duration.ofMinutes(2), () -> assertThat(commitsMessageHandler.commits())
                 .isEqualTo(expectedCommitNumber));
-        } catch (AssertionError er) {
-            Files.writeString(Paths.get(".system-state.txt"), String.format("""
-                    Unexpected number of commits
-                    State:
-                      Mempool for each peer: %s
-                      BlockChain for each peer: %s%n""",
-                mempoolsAsString(),
-                chainsAsString()));
-            throw er;
-        }
 
-        iterate(blockHeight(1), BlockHeight::increment)
-            .limit(expectedCommitNumber)
-            .forEach(height -> {
-                assertThat(commitsMessageHandler.blockOn(height))
-                    .overridingErrorMessage("Proposed block isn't unique on height %s", height.value())
-                    .hasSize(1);
-                assertThat(commitsMessageHandler.commitAuthorsOn(height))
-                    .overridingErrorMessage("Number of author commit on height %s less than quorum", height.value())
-                    .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold());
+            iterate(blockHeight(1), BlockHeight::increment)
+                .limit(expectedCommitNumber)
+                .forEach(height -> {
+                    assertThat(commitsMessageHandler.blockOn(height))
+                        .overridingErrorMessage("Proposed block isn't unique on height %s", height.value())
+                        .hasSize(1);
+                    assertThat(commitsMessageHandler.commitAuthorsOn(height))
+                        .overridingErrorMessage("Number of author commit on height %s less than quorum", height.value())
+                        .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold());
+                });
+
+            assertWithRetry(Duration.ofMillis(100), () -> mempools.values()
+                .forEach(mempool -> assertThat(mempool.unprocessedTransactions()).isEmpty()));
+            chains.values().forEach(chain -> {
+                var allTransactionsInBlocks = chain.blocks()
+                    .stream()
+                    .map(ProposalBlock::transactions)
+                    .flatMap(Collection::stream)
+                    .toList();
+                assertThat(chain.blocks())
+                    .hasSize(expectedCommitNumber);
+                assertThat(allTransactionsInBlocks)
+                    .containsExactlyElementsOf(allTransactions);
             });
-
-        assertWithRetry(Duration.ofMillis(100), () -> mempools.values()
-            .forEach(mempool -> assertThat(mempool.unprocessedTransactions()).isEmpty()));
+        });
     }
 
     private String mempoolsAsString() {
@@ -119,8 +122,23 @@ public class ConsensusTest {
             .collect(Collectors.joining(";\n\n", "{", "}"));
     }
 
+    private void assertWithSnapshotPublish(Runnable runnable) throws IOException {
+        try {
+            runnable.run();
+        } catch (AssertionError er) {
+            Files.writeString(Paths.get(".system-state.txt"), String.format("""
+                    Unexpected number of commits
+                    State:
+                      Mempool for each peer: %s
+                      BlockChain for each peer: %s%n""",
+                mempoolsAsString(),
+                chainsAsString()));
+            throw er;
+        }
+    }
+
     private PeerServer peerServerFor(PublicKey publicKey) {
-        final var mempool = new Mempool();
+        final var mempool = new Mempool(publicKey);
         final var blockChain = new BlockChain();
 
         mempools.put(publicKey, mempool);

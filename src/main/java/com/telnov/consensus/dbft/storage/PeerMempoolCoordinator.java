@@ -29,7 +29,7 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
     private final ExecutorService executor = newSingleThreadExecutor();
 
     private final List<MempoolListener> mempoolListeners = new CopyOnWriteArrayList<>();
-    private final AtomicInteger requiredConditionsForUnlockPasted = new AtomicInteger(0);
+    private final AtomicInteger requiredConditionsForUnlock = new AtomicInteger(0);
 
     private final PublicKey peer;
     private final int transactionsNumberForConsensus;
@@ -96,23 +96,26 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
     @Override
     public void commitFinished() {
         LOG.debug("Peer {} commit finished", peer.key());
-        requiredConditionsForUnlockPasted.incrementAndGet();
+        requiredConditionsForUnlock.incrementAndGet();
         tryUnlock();
     }
 
     @Override
     public void onCommitNotificationFinished(BlockHeight height) {
         LOG.debug("Peer {} commit notification finished", peer.key());
-        requiredConditionsForUnlockPasted.incrementAndGet();
+        requiredConditionsForUnlock.incrementAndGet();
         tryUnlock();
     }
 
     private void tryUnlock() {
-        if (requiredConditionsForUnlockPasted.get() == REQUIRED_NUMBER_OF_CONDITIONS_FOR_UNLOCK) {
+        final int pastedConditions = requiredConditionsForUnlock.get();
+        LOG.debug("Peer {} try unlock consensus block, requiredConditionsForUnlocked {}", peer.key(), pastedConditions);
+
+        if (pastedConditions == REQUIRED_NUMBER_OF_CONDITIONS_FOR_UNLOCK) {
             if (state.compareAndSet(IN_CONSENSUS, WAITING_TRANSACTIONS)) {
                 LOG.debug("Peer {} unset lock on finished commit", peer.key());
                 waitingForTransactions.set(System.currentTimeMillis());
-                requiredConditionsForUnlockPasted.set(0);
+                requiredConditionsForUnlock.set(0);
             }
         }
     }

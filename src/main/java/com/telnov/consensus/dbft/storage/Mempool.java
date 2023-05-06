@@ -2,6 +2,7 @@ package com.telnov.consensus.dbft.storage;
 
 import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
 import com.telnov.consensus.dbft.types.ProposalBlock;
+import com.telnov.consensus.dbft.types.PublicKey;
 import com.telnov.consensus.dbft.types.Transaction;
 import net.jcip.annotations.ThreadSafe;
 import org.apache.logging.log4j.LogManager;
@@ -10,53 +11,34 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @ThreadSafe
 public class Mempool implements CommitListener, UnprocessedTransactionsListener {
 
     private static final Logger LOG = LogManager.getLogger(Mempool.class);
 
-    private final Lock transactionsLock = new ReentrantLock();
+    private final PublicKey peer;
 
     private final BlockingDeque<Transaction> unprocessedTransactions = new LinkedBlockingDeque<>();
 
-    public Mempool() {
+    public Mempool(PublicKey peer) {
+        this.peer = peer;
     }
 
     public void add(List<Transaction> transactions) {
-        transactionsLock.lock();
-
-        try {
-            unprocessedTransactions.addAll(transactions);
-        } finally {
-            transactionsLock.unlock();
-        }
+        LOG.debug("Peer {} add new unprocessed transactions, {}", peer.key(), transactions);
+        unprocessedTransactions.addAll(transactions);
     }
 
     public List<Transaction> unprocessedTransactions() {
-        transactionsLock.lock();
-
-        try {
-            return List.copyOf(unprocessedTransactions);
-        } finally {
-            transactionsLock.unlock();
-        }
+        return List.copyOf(unprocessedTransactions);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public void onCommit(ProposalBlock block) {
-        transactionsLock.lock();
-        LOG.info("Deleting processed transactions");
-
-        try {
-            block.transactions()
-                .forEach(unprocessedTransactions::remove);
-        } finally {
-            transactionsLock.unlock();
-        }
+        LOG.info("Peer {} delete processed transactions {} on {}", peer.key(), block.transactions(), block.height());
+        unprocessedTransactions.removeAll(block.transactions());
     }
 
     @Override

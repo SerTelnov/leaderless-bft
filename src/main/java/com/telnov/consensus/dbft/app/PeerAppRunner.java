@@ -40,7 +40,7 @@ public class PeerAppRunner extends AppRunner {
 
         final var localClient = new LocalClient(peer);
         final var blockChain = new BlockChain();
-        final var mempool = new Mempool();
+        final var mempool = new Mempool(peer);
         final var peerMempoolCoordinator = new PeerMempoolCoordinator(peer, appConfig.consensusStartThreshold, mempool);
 
         final var peerMessageBroadcaster = new PeerMessageBroadcaster(jsonMessageBroadcaster(networkBroadcastClient));
