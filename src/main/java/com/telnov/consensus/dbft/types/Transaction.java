@@ -13,4 +13,9 @@ public record Transaction(UUID id) {
     public static Transaction transaction(UUID id) {
         return new Transaction(id);
     }
+
+    @Override
+    public String toString() {
+        return "Tx:" + id();
+    }
 }

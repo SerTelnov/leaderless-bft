@@ -76,7 +76,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
             throw new PublicKeyNotFound("Unknown message author with public key '%s'", message.author());
         }
 
-        LOG.debug("Receive message {} from author[pk={}]", message, message.author());
+        LOG.debug("Peer {} receive message {} from author[pk={}]", peer.key(), message, message.author());
 
         processingInProgressConsensusMessage((ConsensusHelpfulMessage) message);
     }
@@ -114,7 +114,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
 
     @Override
     public void proposalBlockIsReady(List<Transaction> transactions) {
-        LOG.debug("New transactions: {}", transactions);
+        LOG.debug("Peer {} has new transactions: {}", peer.key(), transactions);
 
         waitingCleanUpOnCommit();
 
@@ -122,6 +122,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
             .increment();
         final var consensus = consensusModuleOn(nextBlockHeight).consensus();
 
+        LOG.debug("Peer {} propose new block on height {}", peer.key(), nextBlockHeight);
         executorService.submit(() ->
             consensus.propose(proposalBlock(nextBlockHeight, transactions)));
     }
@@ -154,13 +155,15 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     }
 
     private ConsensusModule consensusModuleOn(BlockHeight height) {
-        consensusOnHeights.computeIfAbsent(height, __ ->
-            consensusModuleFactory.generateConsensusModules(peer, height));
+        consensusOnHeights.computeIfAbsent(height, __ -> {
+            LOG.debug("Peer {} generate consensus module on height {}", peer.key(), height);
+            return consensusModuleFactory.generateConsensusModules(peer, height);
+        });
         return consensusOnHeights.get(height);
     }
 
     private void cleanState() {
-        LOG.debug("Clear on commit");
+        LOG.debug("Peer {} clear states on commit", peer.key());
         commitFinishedListeners.forEach(CleanUpAfterCommitFinishedListener::commitFinished);
     }
 

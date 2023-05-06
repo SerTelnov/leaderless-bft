@@ -64,7 +64,7 @@ class LogParser:
 
     def _consensus_throughput(self):
         if not self.commits:
-            return 0, 0, 0
+            return 0
         start, end = min(self.proposals.values()), max(self.commits.values())
         duration = end - start
         return duration
@@ -97,7 +97,6 @@ class LogParser:
     def result(self):
         consensus_latency = self._consensus_latency() * 1_000
         cons_duration = self._consensus_throughput()
-        # end_to_end_latency = self._end_to_end_latency() * 1_000
 
         return (
             '\n'
@@ -105,6 +104,7 @@ class LogParser:
             ' SUMMARY:\n'
             '-----------------------------------------\n'
             ' + CONFIG:\n'
+            f' Committee: {self.committee_size} node(s)\n'
             f' Faults: {self.faults} node(s)\n'
             f' Execution time: {round(cons_duration):,} s\n'
             '\n'

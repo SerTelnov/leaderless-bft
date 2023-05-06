@@ -13,6 +13,8 @@ import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposed
 import com.telnov.consensus.dbft.types.PublicKey;
 import static java.util.function.Predicate.not;
 import net.jcip.annotations.NotThreadSafe;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @NotThreadSafe
 public class Consensus implements MessageHandler {
+
+    private static final Logger LOG = LogManager.getLogger(Consensus.class);
 
     private final BlockHeight consensusOnHeight;
     private final PublicKey name;
@@ -45,6 +49,7 @@ public class Consensus implements MessageHandler {
     }
 
     public void propose(ProposalBlock newBlock) {
+        LOG.debug("Peer {} propose new block on height {}", name.key(), newBlock.height());
         broadcaster.broadcast(proposedMultiValueMessage(name, newBlock));
 
         do {

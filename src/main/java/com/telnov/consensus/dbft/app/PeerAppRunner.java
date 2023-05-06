@@ -41,7 +41,7 @@ public class PeerAppRunner extends AppRunner {
         final var localClient = new LocalClient(peer);
         final var blockChain = new BlockChain();
         final var mempool = new Mempool();
-        final var peerMempoolCoordinator = new PeerMempoolCoordinator(appConfig.consensusStartThreshold, mempool);
+        final var peerMempoolCoordinator = new PeerMempoolCoordinator(peer, appConfig.consensusStartThreshold, mempool);
 
         final var peerMessageBroadcaster = new PeerMessageBroadcaster(jsonMessageBroadcaster(networkBroadcastClient));
         final var loggerMessageHandler = new LoggerMessageHandler(committee);
@@ -66,6 +66,7 @@ public class PeerAppRunner extends AppRunner {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
+        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
         jsonNetworkMessageHandler.subscribe(peerServer);

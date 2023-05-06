@@ -1,6 +1,7 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
+import com.telnov.consensus.dbft.LocalCommitNotifier.CommitNotificationFinished;
 import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessageTestData.aRandomCommitMessage;
 import static com.telnov.consensus.dbft.types.CommitMessageTestData.aRandomCommitMessageBy;
@@ -13,6 +14,7 @@ import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
 class LocalCommitNotifierTest {
@@ -20,12 +22,14 @@ class LocalCommitNotifierTest {
     private final PublicKey localPeer = aRandomPublicKey();
     private final Committee committee = aRandomCommitteeWith(4, localPeer);
     private final CommitListener commitListener = mock(CommitListener.class);
+    private final CommitNotificationFinished commitNotificationFinished = mock(CommitNotificationFinished.class);
 
     private final LocalCommitNotifier localCommitNotifier = new LocalCommitNotifier(committee, localPeer);
 
     @BeforeEach
     void setup() {
         localCommitNotifier.subscribe(commitListener);
+        localCommitNotifier.subscribe(commitNotificationFinished);
     }
 
     @Test
@@ -37,8 +41,11 @@ class LocalCommitNotifierTest {
         localCommitNotifier.handle(commitMessage);
 
         // then
-        then(commitListener).should()
+        var inOrder = inOrder(commitListener, commitNotificationFinished);
+        then(commitListener).should(inOrder)
             .onCommit(commitMessage.proposedBlock);
+        then(commitNotificationFinished).should(inOrder)
+            .onCommitNotificationFinished(commitMessage.proposedBlock.height());
     }
 
     @Test
@@ -54,8 +61,11 @@ class LocalCommitNotifierTest {
         commitMessages.forEach(localCommitNotifier::handle);
 
         // then
-        then(commitListener).should()
+        var inOrder = inOrder(commitListener, commitNotificationFinished);
+        then(commitListener).should(inOrder)
             .onCommit(proposalBlock);
+        then(commitNotificationFinished).should(inOrder)
+            .onCommitNotificationFinished(proposalBlock.height());
     }
 
     @Test

@@ -11,8 +11,8 @@ from benchmark.instance import InstanceManager
 def local(ctx, debug=True):
     ''' Run benchmarks on localhost '''
     bench_params = {
-        'faults': 1,
-        'nodes': 10,
+        'faults': 3,
+        'nodes': 15,
         'transactions_number': 1_000,
         'transactions_per_consensus': 20,
         'duration': 60

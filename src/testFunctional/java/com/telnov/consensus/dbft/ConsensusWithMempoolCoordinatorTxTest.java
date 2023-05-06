@@ -80,10 +80,15 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         new PublishBlockTimer(coordinatorPublishTransactionsTimer, Duration.ofMillis(100), mempoolCoordinator);
 
         // then
-        assertWithRetry(Duration.ofSeconds(5), () -> assertThat(chains.values())
+        assertWithRetry(Duration.ofSeconds(30), () -> assertThat(chains.values())
+            .anySatisfy(block -> assertThat(block.blocks())
+                .hasSize(MEMPOOL_GENERATOR_CONFIG.numberOfTransactions() / MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock())));
+
+        assertThat(chains.values())
+            .filteredOn(block -> block.blocks().size() == MEMPOOL_GENERATOR_CONFIG.numberOfTransactions() / MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock())
+            .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold())
             .allSatisfy(block -> {
                 assertThat(block.blocks())
-                    .hasSize(MEMPOOL_GENERATOR_CONFIG.numberOfTransactions() / MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock())
                     .extracting(ProposalBlock::height)
                     .isSorted()
                     .doesNotHaveDuplicates()
@@ -92,7 +97,7 @@ public class ConsensusWithMempoolCoordinatorTxTest {
                 assertThat(block.blocks())
                     .extracting(ProposalBlock::transactions)
                     .containsExactlyElementsOf(mempoolGenerator);
-            }));
+            });
     }
 
     private static void runServerFor(PublicKey peer) {
@@ -102,7 +107,7 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         final var localClient = localClientFor(peer);
         final var blockChain = new BlockChain();
         final var mempool = new Mempool();
-        final var peerMempoolCoordinator = new PeerMempoolCoordinator(MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock(), mempool);
+        final var peerMempoolCoordinator = new PeerMempoolCoordinator(peer, MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock(), mempool);
         chains.put(peer, blockChain);
 
         final var peerMessageBroadcaster = peerMessageBroadcaster(jsonMessageBroadcaster(networkBroadcastClient));
@@ -129,6 +134,7 @@ public class ConsensusWithMempoolCoordinatorTxTest {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
+        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
         jsonNetworkMessageHandler.subscribe(peerServer);

@@ -44,8 +44,5 @@ class MempoolGeneratorTest {
         assertThatThrownBy(() -> new Config(10, -1))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("The value -1 is not in the specified inclusive range of 1 to 100");
-        assertThatThrownBy(() -> new Config(13, 3))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Number of transactions should be multiplicity by number of transactions in block");
     }
 }

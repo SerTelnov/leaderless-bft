@@ -8,7 +8,7 @@ import java.time.Duration;
 
 public class ConsensusModuleFactory {
 
-    private static final Duration TIMER = Duration.ofMillis(200);
+    private static final Duration TIMER = Duration.ofMillis(25);
 
     private final Committee committee;
     private final MessageBroadcaster broadcaster;

@@ -11,8 +11,6 @@ import java.util.function.Supplier;
 
 public class MempoolCoordinator {
 
-    private static final Logger LOG = LogManager.getLogger(MempoolCoordinator.class);
-
     private final CoordinatorBroadcastService broadcastService;
     private final Supplier<Iterator<List<Transaction>>> genMempoolIterator;
 

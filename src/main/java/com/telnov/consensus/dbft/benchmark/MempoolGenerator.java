@@ -43,9 +43,6 @@ public class MempoolGenerator implements Iterable<List<Transaction>> {
         public Config {
             inclusiveBetween(10, 500_000, numberOfTransactions);
             inclusiveBetween(1, 100, numberOfTransactionsInBlock);
-            if (numberOfTransactions % numberOfTransactionsInBlock != 0) {
-                throw new IllegalArgumentException("Number of transactions should be multiplicity by number of transactions in block");
-            }
         }
     }
 }

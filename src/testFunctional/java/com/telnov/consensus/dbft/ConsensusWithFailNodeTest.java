@@ -116,7 +116,7 @@ public class ConsensusWithFailNodeTest {
         final var localClient = localClientFor(peer);
         final var blockChain = new BlockChain();
         final var mempool = new Mempool();
-        final var peerMempoolCoordinator = new PeerMempoolCoordinator(MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock(), mempool);
+        final var peerMempoolCoordinator = new PeerMempoolCoordinator(peer, MEMPOOL_GENERATOR_CONFIG.numberOfTransactionsInBlock(), mempool);
         chains.put(peer, blockChain);
 
         final var peerMessageBroadcaster = peerMessageBroadcaster(jsonMessageBroadcaster(networkBroadcastClient));
@@ -145,6 +145,7 @@ public class ConsensusWithFailNodeTest {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
+        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         final var jsonNetworkMessageHandler = new JsonNetworkMessageHandler();
         jsonNetworkMessageHandler.subscribe(peerServer);

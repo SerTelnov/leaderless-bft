@@ -4,6 +4,8 @@ import com.telnov.consensus.dbft.LocalCommitNotifier.CommitListener;
 import com.telnov.consensus.dbft.types.ProposalBlock;
 import com.telnov.consensus.dbft.types.Transaction;
 import net.jcip.annotations.ThreadSafe;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
@@ -13,6 +15,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @ThreadSafe
 public class Mempool implements CommitListener, UnprocessedTransactionsListener {
+
+    private static final Logger LOG = LogManager.getLogger(Mempool.class);
 
     private final Lock transactionsLock = new ReentrantLock();
 
@@ -45,6 +49,7 @@ public class Mempool implements CommitListener, UnprocessedTransactionsListener 
     @Override
     public void onCommit(ProposalBlock block) {
         transactionsLock.lock();
+        LOG.info("Deleting processed transactions");
 
         try {
             block.transactions()

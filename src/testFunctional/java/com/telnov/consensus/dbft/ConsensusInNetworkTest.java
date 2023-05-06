@@ -10,6 +10,7 @@ import static com.telnov.consensus.dbft.FunctionalTestSetup.node3;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.node4;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.peerMessageBroadcaster;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.waitServersAreConnected;
+import com.telnov.consensus.dbft.helpers.CommitMessageHandler;
 import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageBroadcaster;
 import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageHandler;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
@@ -33,7 +34,7 @@ public class ConsensusInNetworkTest {
 
     private static final Map<PublicKey, NettyBroadcastClient> networkClients = new HashMap<>();
 
-    private static final CommitsMessageHandler commitsMessageHandler = new CommitsMessageHandler();
+    private static final CommitMessageHandler commitMessageHandler = new CommitMessageHandler();
     private static final Mempool mempool = new Mempool();
     private static final Map<PublicKey, BlockChain> chains = new HashMap<>();
 
@@ -45,7 +46,7 @@ public class ConsensusInNetworkTest {
 
     @AfterEach
     void clearUp() {
-        commitsMessageHandler.clear();
+        commitMessageHandler.clear();
 
         // and wait mempool clean
         assertWithRetry(Duration.ofSeconds(1), () ->
@@ -62,7 +63,7 @@ public class ConsensusInNetworkTest {
 
         // then
         assertWithRetry(Duration.ofSeconds(2), () -> {
-            final var proposalBlocks = commitsMessageHandler.commitBlockPerPeers.values();
+            final var proposalBlocks = commitMessageHandler.commitBlockPerPeers.values();
             assertThat(proposalBlocks).hasSize(committee.participants().size());
             assertThat(proposalBlocks)
                 .allSatisfy(block -> {
@@ -83,7 +84,7 @@ public class ConsensusInNetworkTest {
 
         // then
         assertWithRetry(Duration.ofSeconds(2), () -> {
-            final var proposalBlocks = commitsMessageHandler.commitBlockPerPeers.values();
+            final var proposalBlocks = commitMessageHandler.commitBlockPerPeers.values();
             assertThat(proposalBlocks)
                 .hasSizeGreaterThanOrEqualTo(committee.participants().size());
             assertThat(proposalBlocks)
@@ -92,7 +93,7 @@ public class ConsensusInNetworkTest {
                     .containsAll(transactions));
         });
 
-        var currentHeight = commitsMessageHandler.commitBlockPerPeers.values()
+        var currentHeight = commitMessageHandler.commitBlockPerPeers.values()
             .iterator()
             .next()
             .height();
@@ -109,7 +110,7 @@ public class ConsensusInNetworkTest {
 
         // then
         assertWithRetry(Duration.ofSeconds(2), () -> {
-            final var proposalBlocks = commitsMessageHandler.commitBlockPerPeers.values();
+            final var proposalBlocks = commitMessageHandler.commitBlockPerPeers.values();
             assertThat(proposalBlocks)
                 .hasSizeGreaterThanOrEqualTo(committee.participants().size());
             assertThat(proposalBlocks)
@@ -144,14 +145,14 @@ public class ConsensusInNetworkTest {
         final var consensusModuleFactory = consensusModuleFactory(peerMessageBroadcaster, localClient);
         final var peerServer = FunctionalTestSetup.peerServerFor(peer, blockChain, consensusModuleFactory);
 
-        final var peerMempoolCoordinator = new PeerMempoolCoordinator(15, mempool);
+        final var peerMempoolCoordinator = new PeerMempoolCoordinator(peer, 15, mempool);
 
         peerServer.subscribe(peerMempoolCoordinator);
         peerMempoolCoordinator.subscribe(peerServer);
 
         localClient.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(peerServer);
-        peerMessageBroadcaster.subscribe(commitsMessageHandler);
+        peerMessageBroadcaster.subscribe(commitMessageHandler);
 
         final var localCommitNotifier = new LocalCommitNotifier(committee, peer);
         peerMessageBroadcaster.subscribe(localCommitNotifier);
@@ -160,6 +161,7 @@ public class ConsensusInNetworkTest {
         localCommitNotifier.subscribe(mempool);
         localCommitNotifier.subscribe(localClient);
         localCommitNotifier.subscribe(blockChain);
+        localCommitNotifier.subscribe(peerMempoolCoordinator);
 
         FunctionalTestSetup.runServerFor(peer, jsonMessageHandler(peerServer));
     }
