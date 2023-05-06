@@ -16,13 +16,13 @@ import static com.telnov.consensus.dbft.types.MempoolCoordinatorMessage.mempoolC
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
 import static com.telnov.consensus.dbft.types.TransactionTestData.aRandomTransactions;
-import static java.nio.file.Files.writeString;
 import static java.util.stream.Stream.iterate;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collection;
@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 public class ConsensusTest {
 
+    public static final int TRANSACTIONS_FOR_CONSENSUS = 5;
     private final Committee committee = aRandomCommittee(9);
     private final CoordinatorFinder coordinatorFinder = new CoordinatorFinder(committee);
     private final PublicKey mempoolCoordinatorPk = aRandomPublicKey();
@@ -71,13 +72,13 @@ public class ConsensusTest {
             .flatMap(Collection::stream)
             .toList();
 
-        final var expectedCommitNumber = allTransactions.size() / 20;
+        final var expectedCommitNumber = allTransactions.size() / TRANSACTIONS_FOR_CONSENSUS;
 
         try {
             assertWithRetry(Duration.ofMinutes(2), () -> assertThat(commitsMessageHandler.commits())
                 .isEqualTo(expectedCommitNumber));
         } catch (AssertionError er) {
-            writeString(Paths.get(".system-state.txt"), String.format("""
+            Files.writeString(Paths.get(".system-state.txt"), String.format("""
                     Unexpected number of commits
                     State:
                       Mempool for each peer: %s
@@ -97,6 +98,9 @@ public class ConsensusTest {
                     .overridingErrorMessage("Number of author commit on height %s less than quorum", height.value())
                     .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold());
             });
+
+        assertWithRetry(Duration.ofMillis(100), () -> mempools.values()
+            .forEach(mempool -> assertThat(mempool.unprocessedTransactions()).isEmpty()));
     }
 
     private String mempoolsAsString() {
@@ -128,7 +132,7 @@ public class ConsensusTest {
         final var unprocessedTransactionsPublisher = new UnprocessedTransactionsPublisher();
         unprocessedTransactionsPublisher.subscribe(mempool);
 
-        final var peerMempoolCoordinator = new PeerMempoolCoordinator(publicKey, 5, mempool);
+        final var peerMempoolCoordinator = new PeerMempoolCoordinator(publicKey, TRANSACTIONS_FOR_CONSENSUS, mempool);
 
         final var peerServer = new PeerServer(publicKey, mempoolCoordinatorPk, committee,
             blockChain, consensusModuleFactory, unprocessedTransactionsPublisher);
