@@ -1,12 +1,13 @@
 package com.telnov.consensus.dbft.app;
 
-import com.telnov.consensus.dbft.benchmark.SimpleCoordinatorBroadcastService;
+import com.telnov.consensus.dbft.benchmark.CoordinatorBroadcastService;
+import com.telnov.consensus.dbft.benchmark.ExponentialDistributionProvider;
 import com.telnov.consensus.dbft.benchmark.MempoolCoordinator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator.Config;
 import com.telnov.consensus.dbft.benchmark.PublishBlockTimer;
-import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageBroadcaster;
-import com.telnov.consensus.dbft.network.NettyBroadcastClient;
+import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageSender;
+import com.telnov.consensus.dbft.network.NettySendClient;
 
 import java.time.Duration;
 import java.util.Timer;
@@ -20,10 +21,10 @@ public class CoordinatorAppRunner extends AppRunner {
     }
 
     public void run() {
-        final var networkClient = new NettyBroadcastClient(appConfig.committeeWithAddresses.addresses());
+        final var networkClient = new NettySendClient(appConfig.committeeWithAddresses.addresses());
 
         final var mempoolGenerator = new MempoolGenerator(new Config(appConfig.numberOfTransactionToGenerate, appConfig.consensusStartThreshold));
-        final var coordinatorBroadcastService = new SimpleCoordinatorBroadcastService(appConfig.coordinatorPublicKey, jsonMessageBroadcaster(networkClient));
+        final var coordinatorBroadcastService = new CoordinatorBroadcastService(appConfig.coordinatorPublicKey, appConfig.committeeWithAddresses, new ExponentialDistributionProvider(), jsonMessageSender(networkClient));
         final var mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, coordinatorBroadcastService);
 
         waitServersAreConnected(appConfig.committeeWithAddresses.addresses());

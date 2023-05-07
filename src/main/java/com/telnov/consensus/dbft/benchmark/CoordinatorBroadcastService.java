@@ -18,7 +18,7 @@ public class CoordinatorBroadcastService implements BroadcastService {
 
     private static final Logger LOG = LogManager.getLogger(CoordinatorBroadcastService.class);
 
-    private static final Duration maxWaiting = Duration.ofMillis(100);
+    private static final Duration maxWaiting = Duration.ofMillis(50);
 
     private final PublicKey coordinatorPK;
     private final CommitteeWithAddresses committeeWithAddresses;

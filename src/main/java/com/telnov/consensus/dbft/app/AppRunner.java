@@ -1,6 +1,6 @@
 package com.telnov.consensus.dbft.app;
 
-import com.telnov.consensus.dbft.network.NettyBroadcastClient;
+import com.telnov.consensus.dbft.network.NettySendClient;
 import com.telnov.consensus.dbft.network.PeerAddress;
 
 import java.net.InetSocketAddress;
@@ -27,10 +27,10 @@ public abstract class AppRunner {
         }
     }
 
-    protected void runBroadcastClientFor(NettyBroadcastClient networkBroadcastClient) {
+    protected void runBroadcastClientFor(NettySendClient nettySendClient) {
         new Thread(() -> {
             try {
-                networkBroadcastClient.run();
+                nettySendClient.run();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
