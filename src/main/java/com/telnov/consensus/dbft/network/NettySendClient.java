@@ -7,39 +7,37 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFutureListener;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class NettyBroadcastClient implements JsonBroadcaster {
+public class NettySendClient implements JsonSender {
 
-    private final Logger LOG = LogManager.getLogger(NettyBroadcastClient.class);
-
-    private final ChannelGroup recipients = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    private final Logger LOG = LogManager.getLogger(NettySendClient.class);
 
     private final List<PeerAddress> addresses;
+    private final Map<PeerAddress, ChannelFuture> channels = new ConcurrentHashMap<>();
 
-    public NettyBroadcastClient(List<PeerAddress> addresses) {
+    public NettySendClient(List<PeerAddress> addresses) {
         this.addresses = addresses;
     }
 
-    public void run() throws Exception {
+    public void run() throws InterruptedException {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
@@ -56,13 +54,12 @@ public class NettyBroadcastClient implements JsonBroadcaster {
                 }
             });
 
-            final var channels = new ArrayList<ChannelFuture>();
             for (final var address : addresses) {
                 final var channelFuture = bootstrap.connect(address.host(), address.port()).sync();
-                channels.add(channelFuture);
+                channels.put(address, channelFuture);
             }
 
-            channels.forEach(f -> {
+            channels.values().forEach(f -> {
                 try {
                     f.channel().closeFuture().sync();
                 } catch (InterruptedException ignored) {
@@ -74,18 +71,16 @@ public class NettyBroadcastClient implements JsonBroadcaster {
     }
 
     @Override
-    public void broadcast(JsonNode json) {
-        final var future = recipients.writeAndFlush(buffer(json))
-            .addListener((ChannelGroupFutureListener) futureListener -> {
+    public void send(JsonNode json, PeerAddress address) {
+        final var future = channels.get(address)
+            .channel()
+            .writeAndFlush(buffer(json))
+            .addListener((ChannelFutureListener) futureListener -> {
                 if (!futureListener.isSuccess()) {
-                    LOG.error("Error in broadcast message", futureListener.cause());
+                    LOG.error("Error in send message to address {}", address, futureListener.cause());
                 }
             });
         future.awaitUninterruptibly();
-    }
-
-    public boolean connected() {
-        return recipients.size() == addresses.size();
     }
 
     private static ByteBuf buffer(JsonNode json) {
@@ -97,12 +92,11 @@ public class NettyBroadcastClient implements JsonBroadcaster {
         }
     }
 
-    private class ConnectionHandler extends ChannelInboundHandlerAdapter {
+    private static class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             super.channelActive(ctx);
-            recipients.add(ctx.channel());
         }
     }
 }

@@ -2,7 +2,7 @@ package com.telnov.consensus.dbft.helpers;
 
 import com.telnov.consensus.dbft.BinaryConsensus;
 import com.telnov.consensus.dbft.CoordinatorFinder;
-import com.telnov.consensus.dbft.MessageBroadcaster;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.MessageHandler;
 import com.telnov.consensus.dbft.types.BlockHeight;
 import com.telnov.consensus.dbft.types.Committee;

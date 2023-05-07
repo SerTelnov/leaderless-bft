@@ -1,6 +1,6 @@
 package com.telnov.consensus.dbft.app;
 
-import com.telnov.consensus.dbft.benchmark.CoordinatorBroadcastService;
+import com.telnov.consensus.dbft.benchmark.SimpleCoordinatorBroadcastService;
 import com.telnov.consensus.dbft.benchmark.MempoolCoordinator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator.Config;
@@ -23,7 +23,7 @@ public class CoordinatorAppRunner extends AppRunner {
         final var networkClient = new NettyBroadcastClient(appConfig.committeeWithAddresses.addresses());
 
         final var mempoolGenerator = new MempoolGenerator(new Config(appConfig.numberOfTransactionToGenerate, appConfig.consensusStartThreshold));
-        final var coordinatorBroadcastService = new CoordinatorBroadcastService(appConfig.coordinatorPublicKey, jsonMessageBroadcaster(networkClient));
+        final var coordinatorBroadcastService = new SimpleCoordinatorBroadcastService(appConfig.coordinatorPublicKey, jsonMessageBroadcaster(networkClient));
         final var mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, coordinatorBroadcastService);
 
         waitServersAreConnected(appConfig.committeeWithAddresses.addresses());

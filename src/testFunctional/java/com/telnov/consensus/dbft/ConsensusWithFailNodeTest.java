@@ -11,7 +11,7 @@ import static com.telnov.consensus.dbft.FunctionalTestSetup.node4;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.peerMessageBroadcaster;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.runBroadcastClientFor;
 import static com.telnov.consensus.dbft.FunctionalTestSetup.waitServersAreConnected;
-import com.telnov.consensus.dbft.benchmark.CoordinatorBroadcastService;
+import com.telnov.consensus.dbft.benchmark.SimpleCoordinatorBroadcastService;
 import com.telnov.consensus.dbft.benchmark.LoggerMessageHandler;
 import com.telnov.consensus.dbft.benchmark.MempoolCoordinator;
 import com.telnov.consensus.dbft.benchmark.MempoolGenerator;
@@ -71,7 +71,7 @@ public class ConsensusWithFailNodeTest {
     void should_process_transactions_with_fail_node() {
         // given
         final var mempoolGenerator = new MempoolGenerator(MEMPOOL_GENERATOR_CONFIG);
-        final var coordinatorBroadcastService = new CoordinatorBroadcastService(coordinatorPublicKey, jsonMessageBroadcaster(coordinatorNetworkClient));
+        final var coordinatorBroadcastService = new SimpleCoordinatorBroadcastService(coordinatorPublicKey, jsonMessageBroadcaster(coordinatorNetworkClient));
         final var mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, coordinatorBroadcastService);
 
         // and all connected
@@ -138,7 +138,7 @@ public class ConsensusWithFailNodeTest {
         peerMessageBroadcaster.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(loggerMessageHandler);
 
-        final var localCommitNotifier = new LocalCommitNotifier(committee, peer);
+        final var localCommitNotifier = new LocalCommitNotifier(peer);
         peerMessageBroadcaster.subscribe(localCommitNotifier);
 
         localCommitNotifier.subscribe(peerServer);

@@ -11,11 +11,15 @@ import org.apache.logging.log4j.Logger;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @ThreadSafe
 public class Mempool implements CommitListener, UnprocessedTransactionsListener {
 
     private static final Logger LOG = LogManager.getLogger(Mempool.class);
+
+    private final Lock unprocessedTransctionsLock = new ReentrantLock();
 
     private final PublicKey peer;
 
@@ -27,18 +31,33 @@ public class Mempool implements CommitListener, UnprocessedTransactionsListener 
 
     public void add(List<Transaction> transactions) {
         LOG.debug("Peer {} add new unprocessed transactions, {}", peer.key(), transactions);
-        unprocessedTransactions.addAll(transactions);
+        try {
+            unprocessedTransctionsLock.lock();
+            unprocessedTransactions.addAll(transactions);
+        } finally {
+            unprocessedTransctionsLock.unlock();
+        }
     }
 
     public List<Transaction> unprocessedTransactions() {
-        return List.copyOf(unprocessedTransactions);
+        try {
+            unprocessedTransctionsLock.lock();
+            return List.copyOf(unprocessedTransactions);
+        } finally {
+            unprocessedTransctionsLock.unlock();
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public void onCommit(ProposalBlock block) {
         LOG.info("Peer {} delete processed transactions {} on {}", peer.key(), block.transactions(), block.height());
-        unprocessedTransactions.removeAll(block.transactions());
+        try {
+            unprocessedTransctionsLock.lock();
+            unprocessedTransactions.removeAll(block.transactions());
+        } finally {
+            unprocessedTransctionsLock.unlock();
+        }
     }
 
     @Override

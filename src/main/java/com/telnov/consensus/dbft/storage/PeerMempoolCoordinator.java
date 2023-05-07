@@ -80,8 +80,13 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
             .limit(transactionsNumberForConsensus)
             .toList();
 
-        mempoolListeners.forEach(l -> l.proposalBlockIsReady(nextBlock));
-        state.compareAndSet(WAITING_TRANSACTIONS, IN_CONSENSUS);
+        while (true) {
+            if (state.compareAndSet(WAITING_TRANSACTIONS, IN_CONSENSUS)) {
+                mempoolListeners.forEach(l -> l.proposalBlockIsReady(nextBlock));
+                requiredConditionsForUnlock.set(0);
+                break;
+            }
+        }
     }
 
     @VisibleForTesting
@@ -100,9 +105,18 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
         tryUnlock();
     }
 
+
     @Override
     public void onCommitNotificationFinished(BlockHeight height) {
         LOG.debug("Peer {} commit notification finished", peer.key());
+        requiredConditionsForUnlock.incrementAndGet();
+        tryUnlock();
+    }
+
+    @Override
+    public void stuckTransactionsProposed() {
+        LOG.debug("Peer {} coordinator proposed processed transactions", peer.key());
+        requiredConditionsForUnlock.incrementAndGet();
         requiredConditionsForUnlock.incrementAndGet();
         tryUnlock();
     }
@@ -111,11 +125,15 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
         final int pastedConditions = requiredConditionsForUnlock.get();
         LOG.debug("Peer {} try unlock consensus block, requiredConditionsForUnlocked {}", peer.key(), pastedConditions);
 
-        if (pastedConditions == REQUIRED_NUMBER_OF_CONDITIONS_FOR_UNLOCK) {
+        if (pastedConditions < REQUIRED_NUMBER_OF_CONDITIONS_FOR_UNLOCK) {
+            return;
+        }
+
+        while (true) {
             if (state.compareAndSet(IN_CONSENSUS, WAITING_TRANSACTIONS)) {
                 LOG.debug("Peer {} unset lock on finished commit", peer.key());
                 waitingForTransactions.set(System.currentTimeMillis());
-                requiredConditionsForUnlock.set(0);
+                break;
             }
         }
     }

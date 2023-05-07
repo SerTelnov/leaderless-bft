@@ -6,7 +6,7 @@ import com.telnov.consensus.dbft.CoordinatorFinder;
 import com.telnov.consensus.dbft.FailedPeerServer;
 import com.telnov.consensus.dbft.LocalClient;
 import com.telnov.consensus.dbft.LocalCommitNotifier;
-import com.telnov.consensus.dbft.MessageBroadcaster;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.PeerMessageBroadcaster;
 import com.telnov.consensus.dbft.PeerServer;
 import com.telnov.consensus.dbft.benchmark.LoggerMessageHandler;
@@ -59,7 +59,7 @@ public class PeerAppRunner extends AppRunner {
         peerMessageBroadcaster.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(loggerMessageHandler);
 
-        final var localCommitNotifier = new LocalCommitNotifier(committee, peer);
+        final var localCommitNotifier = new LocalCommitNotifier(peer);
         peerMessageBroadcaster.subscribe(localCommitNotifier);
 
         localCommitNotifier.subscribe(peerServer);

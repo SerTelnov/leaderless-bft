@@ -24,7 +24,7 @@ class LocalCommitNotifierTest {
     private final CommitListener commitListener = mock(CommitListener.class);
     private final CommitNotificationFinished commitNotificationFinished = mock(CommitNotificationFinished.class);
 
-    private final LocalCommitNotifier localCommitNotifier = new LocalCommitNotifier(committee, localPeer);
+    private final LocalCommitNotifier localCommitNotifier = new LocalCommitNotifier(localPeer);
 
     @BeforeEach
     void setup() {

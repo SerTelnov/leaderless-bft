@@ -12,6 +12,7 @@ import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import com.telnov.consensus.dbft.types.EstimationMessage;
 import static com.telnov.consensus.dbft.types.EstimationMessage.Builder.estimationMessage;
 import com.telnov.consensus.dbft.types.Message;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.types.PublicKey;
 import com.telnov.consensus.dbft.types.Round;
 import static com.telnov.consensus.dbft.types.Round.round;

@@ -60,7 +60,7 @@ public class ConsensusTest {
             .toList();
 
         var genTransactions = Stream.generate(() -> aRandomTransactions(25))
-            .limit(120)
+            .limit(300)
             .toList();
 
         // when
@@ -76,8 +76,11 @@ public class ConsensusTest {
         final var expectedCommitNumber = allTransactions.size() / TRANSACTIONS_FOR_CONSENSUS;
 
         assertWithSnapshotPublish(() -> {
-            assertWithRetry(Duration.ofMinutes(2), () -> assertThat(commitsMessageHandler.commits())
+            assertWithRetry(Duration.ofMinutes(15), () -> assertThat(commitsMessageHandler.commits())
                 .isEqualTo(expectedCommitNumber));
+
+            assertWithRetry(Duration.ofMillis(500), () -> mempools.values()
+                .forEach(mempool -> assertThat(mempool.unprocessedTransactions()).isEmpty()));
 
             iterate(blockHeight(1), BlockHeight::increment)
                 .limit(expectedCommitNumber)
@@ -90,8 +93,6 @@ public class ConsensusTest {
                         .hasSizeGreaterThanOrEqualTo(committee.quorumThreshold());
                 });
 
-            assertWithRetry(Duration.ofMillis(100), () -> mempools.values()
-                .forEach(mempool -> assertThat(mempool.unprocessedTransactions()).isEmpty()));
             chains.values().forEach(chain -> {
                 var allTransactionsInBlocks = chain.blocks()
                     .stream()
@@ -161,7 +162,7 @@ public class ConsensusTest {
 
         peerServer.subscribe(peerMempoolCoordinator);
 
-        final var localCommitNotifier = new LocalCommitNotifier(committee, publicKey);
+        final var localCommitNotifier = new LocalCommitNotifier(publicKey);
 
         messageBroadcaster.subscribe(localCommitNotifier);
 

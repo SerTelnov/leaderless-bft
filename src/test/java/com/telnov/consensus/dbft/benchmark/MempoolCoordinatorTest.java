@@ -13,7 +13,7 @@ import java.util.List;
 class MempoolCoordinatorTest {
 
     private final MempoolGenerator mempoolGenerator = mock(MempoolGenerator.class);
-    private final CoordinatorBroadcastService broadcastService = mock(CoordinatorBroadcastService.class);
+    private final BroadcastService broadcastService = mock(BroadcastService.class);
 
     private final MempoolCoordinator mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, broadcastService);
 

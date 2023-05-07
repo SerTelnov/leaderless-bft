@@ -5,11 +5,13 @@ import static com.telnov.consensus.dbft.network.CommitteeWithAddresses.committee
 import com.telnov.consensus.dbft.network.JsonHandler;
 import com.telnov.consensus.dbft.network.NettyBroadcastClient;
 import com.telnov.consensus.dbft.network.NettyPeerServer;
+import com.telnov.consensus.dbft.network.NettySendClient;
 import com.telnov.consensus.dbft.network.PeerAddress;
 import com.telnov.consensus.dbft.storage.BlockChain;
 import com.telnov.consensus.dbft.storage.UnprocessedTransactionsPublisher;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.Committee.committee;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import static com.telnov.consensus.dbft.types.PeerNumber.number;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.PublicKeyTestData.aRandomPublicKey;
@@ -44,6 +46,10 @@ public class FunctionalTestSetup {
 
     public static NettyBroadcastClient networkBroadcastClientFor(PublicKey peer) {
         return new NettyBroadcastClient(committeeWithAddresses.addressesExcept(peer));
+    }
+
+    public static NettySendClient networkSenderClientFor(PublicKey peer) {
+        return new NettySendClient(committeeWithAddresses.addressesExcept(peer));
     }
 
     public static PeerMessageBroadcaster peerMessageBroadcaster(MessageBroadcaster networkBroadcaster) {
@@ -85,6 +91,16 @@ public class FunctionalTestSetup {
         new Thread(() -> {
             try {
                 networkBroadcastClient.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+    }
+
+    public static void runSendClientFor(NettySendClient networkSendClient) {
+        new Thread(() -> {
+            try {
+                networkSendClient.run();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

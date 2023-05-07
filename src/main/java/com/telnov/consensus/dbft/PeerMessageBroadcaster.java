@@ -1,6 +1,7 @@
 package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.Message;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

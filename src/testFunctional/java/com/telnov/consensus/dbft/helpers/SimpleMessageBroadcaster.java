@@ -1,6 +1,6 @@
 package com.telnov.consensus.dbft.helpers;
 
-import com.telnov.consensus.dbft.MessageBroadcaster;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.MessageHandler;
 import com.telnov.consensus.dbft.types.Message;
 

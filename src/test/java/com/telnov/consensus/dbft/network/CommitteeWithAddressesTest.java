@@ -52,4 +52,16 @@ class CommitteeWithAddressesTest {
         assertThat(result).hasSize(4)
             .doesNotContain(committeeWithAddresses.addressFor(publicKey));
     }
+
+    @Test
+    void should_return_participants() {
+        // given
+        final var committeeWithAddresses = aRandomCommitteeWithAddresses(5);
+
+        // when
+        var result = committeeWithAddresses.sortedParticipants();
+
+        // then
+        assertThat(result).hasSize(5);
+    }
 }

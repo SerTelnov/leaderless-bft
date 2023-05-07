@@ -2,6 +2,7 @@ package com.telnov.consensus.dbft;
 
 import com.telnov.consensus.dbft.types.BlockHeight;
 import com.telnov.consensus.dbft.types.Committee;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.types.PublicKey;
 
 import java.time.Duration;

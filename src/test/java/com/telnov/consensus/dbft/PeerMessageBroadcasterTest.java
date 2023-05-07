@@ -1,6 +1,7 @@
 package com.telnov.consensus.dbft;
 
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import org.junit.jupiter.api.Test;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;

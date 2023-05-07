@@ -7,6 +7,7 @@ import com.telnov.consensus.dbft.types.Committee;
 import com.telnov.consensus.dbft.types.Estimation;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import com.telnov.consensus.dbft.types.Message;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.types.ProposalBlock;
 import com.telnov.consensus.dbft.types.ProposedMultiValueMessage;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposedMultiValueMessage;

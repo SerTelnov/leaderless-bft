@@ -8,6 +8,7 @@ import static com.telnov.consensus.dbft.types.CommitMessage.commitMessage;
 import com.telnov.consensus.dbft.types.Committee;
 import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommitteeWith;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import static com.telnov.consensus.dbft.types.ProposalBlockTestData.aRandomProposalBlock;
 import static com.telnov.consensus.dbft.types.ProposedMultiValueMessage.proposedMultiValueMessage;
 import com.telnov.consensus.dbft.types.PublicKey;

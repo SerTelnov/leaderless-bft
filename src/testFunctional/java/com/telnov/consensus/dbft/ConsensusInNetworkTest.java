@@ -155,7 +155,7 @@ public class ConsensusInNetworkTest {
         peerMessageBroadcaster.subscribe(peerServer);
         peerMessageBroadcaster.subscribe(commitMessageHandler);
 
-        final var localCommitNotifier = new LocalCommitNotifier(committee, peer);
+        final var localCommitNotifier = new LocalCommitNotifier(peer);
         peerMessageBroadcaster.subscribe(localCommitNotifier);
 
         localCommitNotifier.subscribe(peerServer);

@@ -6,6 +6,7 @@ import static java.lang.String.format;
 import static java.util.function.Predicate.not;
 import static org.apache.commons.lang3.Validate.validState;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +30,13 @@ public class CommitteeWithAddresses {
     public PeerAddress addressFor(PublicKey peer) {
         return Optional.ofNullable(addresses.get(peer))
             .orElseThrow(() -> new IllegalStateException(format("Unknown public key '%s'", peer.key())));
+    }
+
+    public List<PublicKey> sortedParticipants() {
+        return addresses.keySet()
+            .stream()
+            .sorted(Comparator.comparing(PublicKey::key))
+            .toList();
     }
 
     public List<PeerAddress> addresses() {

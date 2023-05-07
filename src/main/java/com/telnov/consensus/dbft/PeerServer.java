@@ -121,6 +121,12 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
 
         final var nextBlockHeight = blockChain.currentHeight()
             .increment();
+
+        if (commitMessagesAuthors.containsKey(nextBlockHeight) &&
+            commitMessagesAuthors.get(nextBlockHeight).contains(peer)) {
+            commitFinishedListeners.forEach(CleanUpAfterCommitFinishedListener::stuckTransactionsProposed);
+        }
+
         final var consensus = consensusModuleOn(nextBlockHeight).consensus();
 
         LOG.debug("Peer {} propose new block on height {}", peer.key(), nextBlockHeight);
@@ -187,5 +193,7 @@ public class PeerServer implements MessageHandler, MempoolListener, CommitListen
     public interface CleanUpAfterCommitFinishedListener {
 
         void commitFinished();
+
+        void stuckTransactionsProposed();
     }
 }

@@ -11,6 +11,7 @@ import static com.telnov.consensus.dbft.types.CommitteeTestData.aRandomCommittee
 import static com.telnov.consensus.dbft.types.CoordinatorMessageTestData.aCoordinatorMessage;
 import static com.telnov.consensus.dbft.types.Estimation.estimation;
 import static com.telnov.consensus.dbft.types.EstimationMessageTestData.anEstimationMessage;
+import com.telnov.consensus.dbft.types.MessageBroadcaster;
 import com.telnov.consensus.dbft.types.PublicKey;
 import static com.telnov.consensus.dbft.types.Round.round;
 import static java.util.UUID.randomUUID;
