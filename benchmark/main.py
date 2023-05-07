@@ -5,11 +5,11 @@ from benchmark.utils import Print, BenchError
 def local(debug=True):
     """ Run benchmarks on localhost """
     bench_params = {
-        'faults': 0,
-        'nodes': 6,
-        'transactions_number': 1_000,
-        'transactions_per_consensus': 15,
-        'duration': 20
+        'faults': 3,
+        'nodes': 10,
+        'transactions_number': 20_000,
+        'transactions_per_consensus': 10,
+        'duration': 10
     }
 
     try:

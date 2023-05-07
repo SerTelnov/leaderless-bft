@@ -76,8 +76,8 @@ class LocalBench:
             )
             benchmark_config.print(PathMaker.benchmark_file())
 
-            failed_nodes = keys[:self.bench_parameters.faults:]
-            good_nodes = keys[self.bench_parameters.faults:]
+            failed_nodes = keys[-self.bench_parameters.faults:] if self.bench_parameters.faults > 0 else []
+            good_nodes = keys[:-self.bench_parameters.faults] if self.bench_parameters.faults > 0 else keys
 
             # Run the peers (except the faulty ones).
             for i, key in enumerate(good_nodes):
