@@ -12,10 +12,10 @@ class ParseError(Exception):
 
 class LogParser:
 
-    def __init__(self, peers, faults=0):
+    def __init__(self, peers, committee, faults=0):
         self.faults = faults
         if isinstance(faults, int):
-            self.committee_size = len(peers)
+            self.committee_size = committee
         else:
             self.committee_size = '?'
 
@@ -174,12 +174,18 @@ class LogParser:
             f.write(self.result())
 
     @classmethod
-    def process(cls, directory, faults=0):
+    def process(cls, directory, committee, faults=0):
         assert isinstance(directory, str)
 
         peers = []
         for filename in sorted(glob(join(directory, 'peer-*.log'))):
             with open(filename, 'r') as f:
-                peers += [f.read()]
+                while True:
+                    line = f.readline()
 
-        return cls(peers, faults=faults)
+                    if not line:
+                        break
+                    if 'LoggerMessageHandler' in line:
+                        peers.append(line)
+
+        return cls(peers, committee, faults=faults)
