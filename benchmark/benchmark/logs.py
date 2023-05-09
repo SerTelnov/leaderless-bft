@@ -138,6 +138,14 @@ class LogParser:
 
         return '\n'.join(out)
 
+    def _mean_peers_consensus_latency(self):
+        means = []
+
+        for pk, values in self.merged_peers_info.items():
+            means.append(round(mean(values) * 1_000))
+
+        return mean(means) if len(means) > 0 else 0
+
     def result(self):
         consensus_latency = self._consensus_latency() * 1_000
         cons_duration = self._consensus_throughput()
@@ -156,6 +164,7 @@ class LogParser:
             f' Consensus latency: {round(consensus_latency):,} ms\n'
             f' Process consensus: {len(self.commits["hashes"])}\n'
             f' Latency per peers:\n' + self._peers_latency() + '\n'
+            f' Mean consensus latency for peers: {self._mean_peers_consensus_latency():,}ms\n'
             '-----------------------------------------\n'
         )
 

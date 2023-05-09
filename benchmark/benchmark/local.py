@@ -101,9 +101,9 @@ class LocalBench:
             log_file = PathMaker.coordinator_log_file()
             self._background_run(cmd, log_file)
 
-        # Wait for all transactions to be processed.
+            # Wait for all transactions to be processed.
             Print.info(f'Running benchmark ({self.duration} sec)...')
-            sleep(self.duration)
+            self.countdown_timer(self.duration)
             self._kill_nodes()
 
             # Parse logs and return the parser.
@@ -113,3 +113,15 @@ class LocalBench:
         except (subprocess.SubprocessError, ParseError) as e:
             self._kill_nodes()
             raise BenchError('Failed to run benchmark', e)
+
+    def countdown_timer(self, seconds):
+        if seconds < 60:
+            sleep(seconds)
+            return
+
+        while seconds > 0:
+            print(f"{seconds} seconds remaining")
+            sleep(30 if seconds > 30 else seconds)
+            seconds -= 30
+
+        print("Time's up!")

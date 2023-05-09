@@ -5,18 +5,24 @@ from benchmark.utils import Print, BenchError
 def local(debug=True):
     """ Run benchmarks on localhost """
     bench_params = {
-        'faults': 3,
-        'nodes': 10,
-        'transactions_number': 20_000,
+        'faults': 5,
+        'nodes': 16,
+        'transactions_number': 200_000,
         'transactions_per_consensus': 10,
-        'duration': 10
+        'duration': 5 * 60
     }
 
-    try:
-        ret = LocalBench(bench_params).run(debug)
-        print(ret.result())
-    except BenchError as e:
-        Print.error(e)
+    nodes = bench_params['nodes']
+    faults = bench_params['faults']
+    duration = bench_params['duration']
+
+    for i in range(5):
+        print(f'Run call number {i + 1}')
+        try:
+            ret = LocalBench(bench_params).run(debug)
+            ret.print(f'results/.results-n-{nodes}-f-{faults}-duration-{duration}.txt')
+        except BenchError as e:
+            Print.error(e)
 
 
 if __name__ == '__main__':

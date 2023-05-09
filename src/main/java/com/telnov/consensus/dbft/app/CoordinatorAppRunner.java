@@ -10,6 +10,7 @@ import static com.telnov.consensus.dbft.jsons.JsonNetworkAdapter.jsonMessageSend
 import com.telnov.consensus.dbft.network.NettySendClient;
 
 import java.time.Duration;
+import java.util.Random;
 import java.util.Timer;
 
 public class CoordinatorAppRunner extends AppRunner {
@@ -24,7 +25,11 @@ public class CoordinatorAppRunner extends AppRunner {
         final var networkClient = new NettySendClient(appConfig.committeeWithAddresses.addresses());
 
         final var mempoolGenerator = new MempoolGenerator(new Config(appConfig.numberOfTransactionToGenerate, appConfig.consensusStartThreshold));
-        final var coordinatorBroadcastService = new CoordinatorBroadcastService(appConfig.coordinatorPublicKey, appConfig.committeeWithAddresses, new ExponentialDistributionProvider(), jsonMessageSender(networkClient));
+        final var coordinatorBroadcastService = new CoordinatorBroadcastService(
+            appConfig.coordinatorPublicKey,
+            appConfig.committeeWithAddresses,
+            new ExponentialDistributionProvider(new Random(7)),
+            jsonMessageSender(networkClient));
         final var mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, coordinatorBroadcastService);
 
         waitServersAreConnected(appConfig.committeeWithAddresses.addresses());
