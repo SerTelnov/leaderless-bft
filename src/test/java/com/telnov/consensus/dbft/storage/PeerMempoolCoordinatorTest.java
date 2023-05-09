@@ -44,8 +44,8 @@ class PeerMempoolCoordinatorTest {
         assertWithRetry(Duration.ofMillis(10), () -> assertThat(peerMempoolCoordinator.state())
             .isEqualTo(IN_CONSENSUS));
 
-        then(mempoolListener).should()
-            .proposalBlockIsReady(transactions.subList(0, 5));
+        assertWithRetry(Duration.ofMillis(10), () -> then(mempoolListener).should()
+            .proposalBlockIsReady(transactions.subList(0, 5)));
     }
 
     @Test
