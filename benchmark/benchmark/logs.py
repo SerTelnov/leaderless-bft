@@ -164,7 +164,7 @@ class LogParser:
             f' Consensus latency: {round(consensus_latency):,} ms\n'
             f' Process consensus: {len(self.commits["hashes"])}\n'
             f' Latency per peers:\n' + self._peers_latency() + '\n'
-            f' Mean consensus latency for peers: {self._mean_peers_consensus_latency():,}ms\n'
+            f' Mean consensus latency for peers: {self._mean_peers_consensus_latency():,} ms\n'
             '-----------------------------------------\n'
         )
 
