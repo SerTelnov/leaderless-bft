@@ -9,7 +9,6 @@ import com.telnov.consensus.dbft.types.PublicKey;
 import com.telnov.consensus.dbft.types.Transaction;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class FailedPeerServer extends PeerServer {
 
@@ -24,24 +23,19 @@ public class FailedPeerServer extends PeerServer {
 
     @Override
     public void handle(Message message) {
-        timeout();
+        doNothing();
     }
 
     @Override
     public void onCommit(ProposalBlock block) {
-        timeout();
+        doNothing();
     }
 
     @Override
     public void proposalBlockIsReady(List<Transaction> transactions) {
-        timeout();
+        doNothing();
     }
 
-    private static void timeout() {
-        try {
-            TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    private static void doNothing() {
     }
 }
