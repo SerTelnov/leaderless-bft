@@ -30,6 +30,7 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
 
     private final List<MempoolListener> mempoolListeners = new CopyOnWriteArrayList<>();
     private final AtomicInteger requiredConditionsForUnlock = new AtomicInteger(0);
+    private final AtomicLong waitingForConsensus = new AtomicLong();
 
     private final PublicKey peer;
     private final int transactionsNumberForConsensus;
@@ -54,6 +55,7 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
     }
 
     private void perform() {
+        waitingForConsensus.set(System.currentTimeMillis());
         while (true) {
             if (state.compareAndSet(WAITING_TRANSACTIONS, WAITING_TRANSACTIONS)) {
                 final var transactions = mempool.unprocessedTransactions();
@@ -67,8 +69,15 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
                     proposeNextBlock(transactions);
                     waitingForTransactions.set(0);
                 }
+            } else if (timesUp()) {
+                LOG.debug("Peer {} waiting for consensus times up", peer.key());
+                unlock();
             }
         }
+    }
+
+    private boolean timesUp() {
+        return System.currentTimeMillis() - waitingForConsensus.get() > Duration.ofSeconds(2).toMillis();
     }
 
     private boolean waitingTimout() {
@@ -84,6 +93,7 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
             if (state.compareAndSet(WAITING_TRANSACTIONS, IN_CONSENSUS)) {
                 mempoolListeners.forEach(l -> l.proposalBlockIsReady(nextBlock));
                 requiredConditionsForUnlock.set(0);
+                waitingForConsensus.set(System.currentTimeMillis());
                 break;
             }
         }
@@ -104,7 +114,6 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
         requiredConditionsForUnlock.incrementAndGet();
         tryUnlock();
     }
-
 
     @Override
     public void onCommitNotificationFinished(BlockHeight height) {
@@ -129,6 +138,10 @@ public class PeerMempoolCoordinator implements CleanUpAfterCommitFinishedListene
             return;
         }
 
+        unlock();
+    }
+
+    private void unlock() {
         while (true) {
             if (state.compareAndSet(IN_CONSENSUS, WAITING_TRANSACTIONS)) {
                 LOG.debug("Peer {} unset lock on finished commit", peer.key());
