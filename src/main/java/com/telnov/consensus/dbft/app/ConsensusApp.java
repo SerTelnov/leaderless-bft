@@ -12,7 +12,7 @@ public class ConsensusApp {
 
         if (consolArgs.isMempoolCoordinator()) {
             LOG.debug("Running mempool coordinator app");
-            new CoordinatorAppRunner(consolArgs.config())
+            new CoordinatorAppRunner(consolArgs.config(), consolArgs.lambda().orElse(1. / 5))
                 .run();
         } else {
             LOG.debug("Running peer app");

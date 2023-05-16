@@ -9,14 +9,6 @@ public class ExponentialDistributionProvider {
     private final Random random;
     private final double rateParameter;
 
-    public ExponentialDistributionProvider(Random random) {
-        this(1. / 5, random);
-    }
-
-    public ExponentialDistributionProvider() {
-        this(1. / 5);
-    }
-
     public ExponentialDistributionProvider(double rateParameter) {
         this(rateParameter, new Random());
     }

@@ -30,9 +30,10 @@ class CommandMaker:
                 f'-jar ConsensusApp.jar ' + parameters)
 
     @staticmethod
-    def run_coordinator(parameters):
+    def run_coordinator(parameters, a_lambda):
+        l_param = f'-l {a_lambda} ' if a_lambda is not None else ''
         return (f'java -DappName=coordinator -Dlog4j.configurationFile=log4j.xml '
-                f'-jar ConsensusApp.jar -coordinator ' + parameters)
+                f'-jar ConsensusApp.jar -coordinator ' + l_param + parameters)
 
     @staticmethod
     def kill():

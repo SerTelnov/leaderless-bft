@@ -20,13 +20,14 @@ class CommandLineArgsParserTest {
         var pk = aRandomPublicKey();
 
         // when
-        var result = new Args(appConfig, false, false, Optional.of(pk));
+        var result = new Args(appConfig, false, false, Optional.of(pk), Optional.of(1.));
 
         // then
         assertThat(result.config()).isEqualTo(appConfig);
         assertThat(result.isMempoolCoordinator()).isFalse();
         assertThat(result.isFailedPeer()).isFalse();
         assertThat(result.peer()).hasValue(pk);
+        assertThat(result.lambda()).hasValue(1.);
     }
 
     @Test
@@ -35,7 +36,7 @@ class CommandLineArgsParserTest {
         var appConfig = mock(AppConfig.class);
 
         // then
-        assertThatThrownBy(() -> new Args(appConfig, false, false, empty()))
+        assertThatThrownBy(() -> new Args(appConfig, false, false, empty(), empty()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Should provide Public key for not mempool coordinator");
     }
@@ -46,7 +47,7 @@ class CommandLineArgsParserTest {
         var appConfig = mock(AppConfig.class);
 
         // then
-        assertThatThrownBy(() -> new Args(appConfig, true, true, empty()))
+        assertThatThrownBy(() -> new Args(appConfig, true, true, empty(), empty()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Should not be both isMempoolCoordinator and isFailedPeer");
     }
@@ -64,5 +65,21 @@ class CommandLineArgsParserTest {
         assertThat(result.isMempoolCoordinator()).isFalse();
         assertThat(result.config()).isNotNull();
         assertThat(result.peer()).hasValue(publicKey("fe0d452c-87cc-47e6-8b0f-2859dfeefbd7"));
+    }
+
+    @Test
+    void should_parse_mempool_coordinator_command_line_args() throws Exception {
+        // given
+        final String[] args = {"-coordinator", "-config", "test-config.yaml", "-l", "0.1"};
+
+        // when
+        var result = CommandLineArgsParser.parse(args);
+
+        // then
+        assertThat(result.isFailedPeer()).isFalse();
+        assertThat(result.isMempoolCoordinator()).isTrue();
+        assertThat(result.config()).isNotNull();
+        assertThat(result.peer()).isEmpty();
+        assertThat(result.lambda()).hasValue(0.1);
     }
 }

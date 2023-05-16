@@ -22,7 +22,8 @@ final class CommandLineArgsParser {
     public record Args(AppConfig config,
                        boolean isMempoolCoordinator,
                        boolean isFailedPeer,
-                       Optional<PublicKey> peer) {
+                       Optional<PublicKey> peer,
+                       Optional<Double> lambda) {
 
         public Args {
             isTrue(!(isMempoolCoordinator && isFailedPeer), "Should not be both isMempoolCoordinator and isFailedPeer");
@@ -46,8 +47,10 @@ final class CommandLineArgsParser {
         final var appConfig = readAppConfig(cmd.getOptionValue("config"));
         final var isMempoolCoordinator = cmd.hasOption("coordinator");
         final var isFailedCoordinator = cmd.hasOption("f");
+        final var lambda = Optional.ofNullable(cmd.getOptionValue("lambda"))
+            .map(Double::parseDouble);
 
-        return new Args(appConfig, isMempoolCoordinator, isFailedCoordinator, publicKey);
+        return new Args(appConfig, isMempoolCoordinator, isFailedCoordinator, publicKey, lambda);
     }
 
     private static AppConfig readAppConfig(String configPath) throws IOException {
@@ -75,6 +78,7 @@ final class CommandLineArgsParser {
         options.addOption(fileWithConfigOption());
         options.addOption(isMempoolCoordinatorOption());
         options.addOption(isFailedPeerOption());
+        options.addOption(lambda());
 
         return options;
     }
@@ -99,6 +103,12 @@ final class CommandLineArgsParser {
 
     private static Option isFailedPeerOption() {
         final var option = new Option("f", "failed", false, "Is failed peer");
+        option.setRequired(false);
+        return option;
+    }
+
+    private static Option lambda() {
+        final var option = new Option("l", "lambda", true, "Free constant lambda");
         option.setRequired(false);
         return option;
     }

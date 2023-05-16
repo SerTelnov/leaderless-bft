@@ -81,7 +81,7 @@ public class ConsensusWithMempoolCoordinatorTxTest {
     void should_process_all_mempool_coordinator_transactions() {
         // given
         final var mempoolGenerator = new MempoolGenerator(MEMPOOL_GENERATOR_CONFIG);
-        final var coordinatorBroadcastService = new CoordinatorBroadcastService(coordinatorPublicKey, committeeWithAddresses, new ExponentialDistributionProvider(), jsonMessageSender(coordinatorNetworkClient));
+        final var coordinatorBroadcastService = new CoordinatorBroadcastService(coordinatorPublicKey, committeeWithAddresses, new ExponentialDistributionProvider(1), jsonMessageSender(coordinatorNetworkClient));
         final var mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, coordinatorBroadcastService);
 
         // and all connected

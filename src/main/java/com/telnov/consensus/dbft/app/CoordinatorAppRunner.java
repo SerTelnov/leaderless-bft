@@ -20,9 +20,11 @@ public class CoordinatorAppRunner extends AppRunner {
     private static final Logger LOG = LogManager.getLogger(CoordinatorAppRunner.class);
 
     private final AppConfig appConfig;
+    private final double lambda;
 
-    public CoordinatorAppRunner(AppConfig config) {
+    public CoordinatorAppRunner(AppConfig config, double lambda) {
         this.appConfig = config;
+        this.lambda = lambda;
     }
 
     public void run() {
@@ -31,11 +33,11 @@ public class CoordinatorAppRunner extends AppRunner {
 
         LOG.debug("Init mempool transactions generator");
         final var mempoolGenerator = new MempoolGenerator(new Config(appConfig.numberOfTransactionToGenerate, appConfig.consensusStartThreshold));
-        LOG.debug("Init coordinator broadcast service");
+        LOG.debug("Init coordinator broadcast service with lambda {}", lambda);
         final var coordinatorBroadcastService = new CoordinatorBroadcastService(
             appConfig.coordinatorPublicKey,
             appConfig.committeeWithAddresses,
-            new ExponentialDistributionProvider(new Random(7)),
+            new ExponentialDistributionProvider(lambda, new Random(7)),
             jsonMessageSender(networkClient));
         LOG.debug("Init mempool coordinator service");
         final var mempoolCoordinator = new MempoolCoordinator(mempoolGenerator, coordinatorBroadcastService);

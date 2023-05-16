@@ -15,6 +15,7 @@ class LocalBench:
     def __init__(self, bench_parameters_dict):
         try:
             self.duration = bench_parameters_dict['duration']
+            self.spam_lambda = bench_parameters_dict['lambda']
             self.bench_parameters = BenchParameters(bench_parameters_dict)
         except ConfigError as e:
             raise BenchError('Invalid nodes or bench parameters', e)
@@ -97,7 +98,7 @@ class LocalBench:
 
             # Run coordinator
             cmd = CommandMaker.run_coordinator(
-                f'-config {PathMaker.benchmark_file()}')
+                f'-config {PathMaker.benchmark_file()}', self.spam_lambda)
             log_file = PathMaker.coordinator_log_file()
             self._background_run(cmd, log_file)
 
